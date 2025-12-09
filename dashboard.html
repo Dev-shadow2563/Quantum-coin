@@ -1,0 +1,2452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumCoin Dashboard | Live Crypto Trading</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #00f0ff;
+            --secondary: #7b2cbf;
+            --accent: #ff00c8;
+            --dark: #0a0a1f;
+            --darker: #050510;
+            --light: #e2fafc;
+            --success: #00ff88;
+            --danger: #ff006e;
+            --warning: #ffcc00;
+        }
+
+        body {
+            background-color: var(--darker);
+            color: var(--light);
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(123, 44, 191, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.1) 0%, transparent 20%);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Dashboard Header */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+            margin-bottom: 25px;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 25px;
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: var(--primary);
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(0, 240, 255, 0.2);
+            transform: translateX(-5px);
+            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .support-link {
+            color: rgba(226, 250, 252, 0.7);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .support-link:hover {
+            color: var(--primary);
+        }
+
+        /* Dashboard Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 250px 1fr 350px;
+            gap: 25px;
+            padding-bottom: 25px;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+            height: fit-content;
+            position: sticky;
+            top: 25px;
+        }
+
+        .user-profile {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .user-profile h2 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: var(--primary);
+            word-break: break-word;
+        }
+
+        .user-profile p {
+            color: rgba(226, 250, 252, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-menu li {
+            margin-bottom: 10px;
+        }
+
+        .nav-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            color: rgba(226, 250, 252, 0.8);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a:hover, .nav-menu a.active {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+        }
+
+        .nav-menu i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .welcome-banner {
+            background: linear-gradient(45deg, rgba(0, 240, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .welcome-banner h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .welcome-banner p {
+            color: rgba(226, 250, 252, 0.8);
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(10, 10, 31, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 240, 255, 0.2);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: rgba(226, 250, 252, 0.7);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-card .change {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        /* Live Price Ticker */
+        .price-ticker {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .ticker-container {
+            display: flex;
+            gap: 40px;
+            animation: tickerScroll 60s linear infinite;
+            width: max-content;
+        }
+
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .ticker-symbol {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .ticker-price {
+            font-weight: 600;
+        }
+
+        .ticker-change {
+            font-size: 0.85rem;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        /* Trading View */
+        .trading-section {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 240, 255, 0.05);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .timeframe-btn {
+            padding: 8px 15px;
+            background: transparent;
+            border: none;
+            color: rgba(226, 250, 252, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeframe-btn.active {
+            background: rgba(0, 240, 255, 0.2);
+            color: var(--primary);
+        }
+
+        .trading-chart {
+            height: 400px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Trading Pairs */
+        .trading-pairs {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .pair-card {
+            background: rgba(0, 240, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pair-card:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .pair-card.active {
+            background: rgba(0, 240, 255, 0.15);
+            border-color: var(--primary);
+        }
+
+        .price-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .flash-up {
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .flash-down {
+            background: rgba(255, 0, 110, 0.1);
+        }
+
+        .pair-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .pair-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .pair-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .pair-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .pair-change {
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+        }
+
+        .pair-volume {
+            font-size: 0.75rem;
+            color: rgba(226, 250, 252, 0.6);
+            margin-top: 5px;
+        }
+
+        /* Right Panel - Trading Interface */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .trade-interface {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .trade-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+        }
+
+        .trade-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            color: rgba(226, 250, 252, 0.7);
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .trade-tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .trade-form {
+            display: none;
+        }
+
+        .trade-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(226, 250, 252, 0.9);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 8px;
+            color: var(--light);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+        }
+
+        .amount-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .amount-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 8px;
+            color: rgba(226, 250, 252, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .amount-btn:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+        .trade-summary {
+            background: rgba(0, 240, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: rgba(226, 250, 252, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .trade-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .buy-btn {
+            background: linear-gradient(45deg, var(--success), #00cc66);
+            color: var(--darker);
+        }
+
+        .sell-btn {
+            background: linear-gradient(45deg, var(--danger), #cc0055);
+            color: var(--light);
+        }
+
+        .trade-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Portfolio */
+        .portfolio {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .portfolio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .portfolio-list {
+            margin-top: 20px;
+        }
+
+        .portfolio-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(0, 240, 255, 0.05);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .portfolio-item:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+        .coin-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .coin-amount {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .coin-value {
+            color: rgba(226, 250, 252, 0.7);
+            font-size: 0.9rem;
+        }
+
+        /* Withdraw/Deposit */
+        .wallet-actions {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .deposit-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: var(--darker);
+        }
+
+        .withdraw-btn {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--light);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Recent Activity */
+        .recent-activity {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .activity-list {
+            margin-top: 20px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .activity-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--primary);
+        }
+
+        .activity-details h4 {
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+        }
+
+        .activity-details p {
+            font-size: 0.8rem;
+            color: rgba(226, 250, 252, 0.6);
+        }
+
+        .activity-amount {
+            font-weight: 600;
+        }
+
+        .positive-amount {
+            color: var(--success);
+        }
+
+        .negative-amount {
+            color: var(--danger);
+        }
+
+        /* Notification Bell */
+        .notification-bell {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--darker);
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .notification-bell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 240, 255, 0.6);
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.7rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(0, 240, 255, 0.2);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+            }
+            
+            .right-panel {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .dashboard {
+                padding: 15px 0;
+                gap: 15px;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .timeframe-selector {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .trading-pairs {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dashboard Header -->
+    <div class="container">
+        <div class="dashboard-header">
+            <a href="index.html" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+            <div class="header-controls">
+                <a href="mailto:ashleyslester200@gmail.com" class="support-link">
+                    <i class="fas fa-envelope"></i>
+                    Support: ashleyslester200@gmail.com
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="avatar" id="userAvatar">QC</div>
+                    <h2 id="usernameDisplay">Loading...</h2>
+                    <p id="userEmail">Premium Trader</p>
+                </div>
+                
+                <ul class="nav-menu">
+                    <li><a href="#" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    <li><a href="#"><i class="fas fa-exchange-alt"></i> Trading</a></li>
+                    <li><a href="#"><i class="fas fa-wallet"></i> Wallet</a></li>
+                    <li><a href="#"><i class="fas fa-history"></i> History</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                    <li><a href="#"><i class="fas fa-question-circle"></i> Support</a></li>
+                    <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <h1>Welcome Back, <span id="greetingName">Trader</span>!</h1>
+                    <p>Ready to make some profitable trades? The market is looking hot today with meme coins showing massive potential.</p>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Account Balance</h3>
+                            <div class="value" id="accountBalance">$0.00</div>
+                            <div class="change positive"><i class="fas fa-arrow-up"></i> Add funds to start trading</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Portfolio Value</h3>
+                            <div class="value" id="portfolioValue">$0.00</div>
+                            <div class="change">No investments yet</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Today's P&L</h3>
+                            <div class="value" id="dailyPL">$0.00</div>
+                            <div class="change">Start trading to see profits</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Total Trades</h3>
+                            <div class="value" id="totalTrades">0</div>
+                            <div class="change positive"><i class="fas fa-arrow-up"></i> Ready to begin!</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Price Ticker -->
+                    <div class="price-ticker">
+                        <div class="ticker-container" id="liveTicker">
+                            <!-- Live prices will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading View -->
+                <div class="trading-section">
+                    <div class="section-header">
+                        <h2>Live Trading View - <span id="selectedCoinName">Bitcoin (BTC)</span></h2>
+                        <div class="timeframe-selector">
+                            <button class="timeframe-btn active" data-timeframe="1h">1H</button>
+                            <button class="timeframe-btn" data-timeframe="1d">1D</button>
+                            <button class="timeframe-btn" data-timeframe="1w">1W</button>
+                            <button class="timeframe-btn" data-timeframe="1m">1M</button>
+                            <button class="timeframe-btn" data-timeframe="1y">1Y</button>
+                        </div>
+                    </div>
+                    
+                    <div class="trading-chart" id="tradingChart">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                    
+                    <h3>Top Cryptocurrencies - Today's Movement</h3>
+                    <div class="trading-pairs" id="tradingPairs">
+                        <!-- Trading pairs will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="right-panel">
+                <!-- Trading Interface -->
+                <div class="trade-interface">
+                    <div class="trade-tabs">
+                        <div class="trade-tab active" data-tab="buy">Buy</div>
+                        <div class="trade-tab" data-tab="sell">Sell</div>
+                    </div>
+                    
+                    <!-- Buy Form -->
+                    <form class="trade-form active" id="buyForm">
+                        <div class="form-group">
+                            <label for="buyCoin">Coin</label>
+                            <select id="buyCoin" class="form-control">
+                                <option value="BTC">Bitcoin (BTC)</option>
+                                <option value="ETH">Ethereum (ETH)</option>
+                                <option value="DOGE">Dogecoin (DOGE)</option>
+                                <option value="SHIB">Shiba Inu (SHIB)</option>
+                                <option value="ADA">Cardano (ADA)</option>
+                                <option value="SOL">Solana (SOL)</option>
+                                <option value="XRP">Ripple (XRP)</option>
+                                <option value="BNB">Binance Coin (BNB)</option>
+                                <option value="DOT">Polkadot (DOT)</option>
+                                <option value="MATIC">Polygon (MATIC)</option>
+                                <option value="AVAX">Avalanche (AVAX)</option>
+                                <option value="LINK">Chainlink (LINK)</option>
+                                <option value="LTC">Litecoin (LTC)</option>
+                                <option value="UNI">Uniswap (UNI)</option>
+                                <option value="ATOM">Cosmos (ATOM)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="buyAmount">Amount (USD)</label>
+                            <input type="number" id="buyAmount" class="form-control" placeholder="0.00" min="10" step="0.01" value="100">
+                            <div class="amount-selector">
+                                <div class="amount-btn" data-amount="50">$50</div>
+                                <div class="amount-btn" data-amount="100">$100</div>
+                                <div class="amount-btn" data-amount="500">$500</div>
+                                <div class="amount-btn" data-amount="1000">$1K</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="buyPrice">Current Price</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="buyPrice" class="form-control" value="$43,250.75" readonly style="flex: 1;">
+                                <span id="buyPriceChange" style="font-size: 0.9rem; padding: 4px 8px; border-radius: 5px; font-weight: 600;"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="trade-summary">
+                            <div class="summary-row">
+                                <span>Total Cost</span>
+                                <span id="buyTotal">$100.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Fee (0.1%)</span>
+                                <span id="buyFee">$0.10</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>You Receive</span>
+                                <span id="buyReceive">0.00231 BTC</span>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="trade-btn buy-btn">
+                            <i class="fas fa-shopping-cart"></i>
+                            Buy Now
+                        </button>
+                    </form>
+                    
+                    <!-- Sell Form -->
+                    <form class="trade-form" id="sellForm">
+                        <div class="form-group">
+                            <label for="sellCoin">Coin</label>
+                            <select id="sellCoin" class="form-control">
+                                <option value="BTC">Bitcoin (BTC)</option>
+                                <option value="ETH">Ethereum (ETH)</option>
+                                <option value="DOGE">Dogecoin (DOGE)</option>
+                                <option value="SHIB">Shiba Inu (SHIB)</option>
+                                <option value="ADA">Cardano (ADA)</option>
+                                <option value="SOL">Solana (SOL)</option>
+                                <option value="XRP">Ripple (XRP)</option>
+                                <option value="BNB">Binance Coin (BNB)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sellAmount">Amount (Coin)</label>
+                            <input type="number" id="sellAmount" class="form-control" placeholder="0.00" min="0.0001" step="0.0001" value="0.1">
+                            <div class="amount-selector">
+                                <div class="amount-btn" data-percent="25">25%</div>
+                                <div class="amount-btn" data-percent="50">50%</div>
+                                <div class="amount-btn" data-percent="75">75%</div>
+                                <div class="amount-btn" data-percent="100">100%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sellPrice">Current Price</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="text" id="sellPrice" class="form-control" value="$43,250.75" readonly style="flex: 1;">
+                                <span id="sellPriceChange" style="font-size: 0.9rem; padding: 4px 8px; border-radius: 5px; font-weight: 600;"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="trade-summary">
+                            <div class="summary-row">
+                                <span>Total Value</span>
+                                <span id="sellTotal">$4,325.08</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Fee (0.1%)</span>
+                                <span id="sellFee">$4.33</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>You Receive</span>
+                                <span id="sellReceive">$4,320.75</span>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="trade-btn sell-btn">
+                            <i class="fas fa-dollar-sign"></i>
+                            Sell Now
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Portfolio -->
+                <div class="portfolio">
+                    <div class="portfolio-header">
+                        <h2>Live Portfolio</h2>
+                        <span class="positive" id="portfolioChange">+0.00%</span>
+                    </div>
+                    <div class="portfolio-list" id="portfolioList">
+                        <!-- Portfolio items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Withdraw/Deposit -->
+                <div class="wallet-actions">
+                    <h2>Wallet Actions</h2>
+                    <p style="margin-top: 10px; color: rgba(226, 250, 252, 0.7); font-size: 0.9rem;">
+                        Add funds to start trading or withdraw your profits
+                    </p>
+                    
+                    <div class="action-buttons">
+                        <button class="action-btn deposit-btn" id="depositBtn">
+                            <i class="fas fa-plus-circle"></i>
+                            Deposit Funds
+                        </button>
+                        <button class="action-btn withdraw-btn" id="withdrawBtn">
+                            <i class="fas fa-external-link-alt"></i>
+                            Withdraw
+                        </button>
+                    </div>
+                    
+                    <div class="trade-summary" style="margin-top: 20px;">
+                        <div class="summary-row">
+                            <span>Available Balance</span>
+                            <span id="availableBalance">$0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>In Open Orders</span>
+                            <span>$0.00</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Total Equity</span>
+                            <span id="totalEquity">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-activity">
+                    <h2>Recent Activity</h2>
+                    <div class="activity-list" id="activityList">
+                        <!-- Activities will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Bell -->
+    <div class="notification-bell" id="notificationBell">
+        <i class="fas fa-bell"></i>
+        <span class="notification-count" id="notificationCount">0</span>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ========== GLOBAL DATA ==========
+        let accountData = {
+            balance: 1000.00,
+            portfolioValue: 0.00,
+            dailyPL: 0.00,
+            totalTrades: 0,
+            portfolio: {},
+            activities: [],
+            username: '',
+            email: ''
+        };
+
+        // Real cryptocurrency data with accurate starting prices
+        let cryptoData = {
+            BTC: { name: 'Bitcoin', price: 43250.75, change: 5.32, volume: 24500000000, marketCap: 847200000000, color: '#f7931a' },
+            ETH: { name: 'Ethereum', price: 2350.45, change: 3.21, volume: 9800000000, marketCap: 282000000000, color: '#627eea' },
+            DOGE: { name: 'Dogecoin', price: 0.089, change: 12.45, volume: 1200000000, marketCap: 12700000000, color: '#7b2cbf' },
+            SHIB: { name: 'Shiba Inu', price: 0.00000876, change: 23.67, volume: 480000000, marketCap: 5200000000, color: '#ff00c8' },
+            ADA: { name: 'Cardano', price: 0.52, change: -1.23, volume: 320000000, marketCap: 18500000000, color: '#0033ad' },
+            SOL: { name: 'Solana', price: 95.67, change: 7.89, volume: 2100000000, marketCap: 42000000000, color: '#00ffa3' },
+            XRP: { name: 'Ripple', price: 0.62, change: 0.45, volume: 1800000000, marketCap: 33500000000, color: '#23292f' },
+            BNB: { name: 'Binance Coin', price: 310.25, change: 2.34, volume: 1500000000, marketCap: 48000000000, color: '#f0b90b' },
+            DOT: { name: 'Polkadot', price: 7.45, change: -0.85, volume: 280000000, marketCap: 9500000000, color: '#e6007a' },
+            MATIC: { name: 'Polygon', price: 0.82, change: 3.45, volume: 320000000, marketCap: 7800000000, color: '#8247e5' },
+            AVAX: { name: 'Avalanche', price: 35.67, change: 4.23, volume: 420000000, marketCap: 12500000000, color: '#e84142' },
+            LINK: { name: 'Chainlink', price: 15.89, change: -0.67, volume: 290000000, marketCap: 8900000000, color: '#2a5ada' },
+            LTC: { name: 'Litecoin', price: 72.34, change: 1.23, volume: 520000000, marketCap: 5400000000, color: '#bfbbbb' },
+            UNI: { name: 'Uniswap', price: 6.45, change: 2.89, volume: 180000000, marketCap: 4800000000, color: '#ff007a' },
+            ATOM: { name: 'Cosmos', price: 9.87, change: -2.34, volume: 210000000, marketCap: 3600000000, color: '#2e3148' }
+        };
+
+        // Chart variables
+        let priceChart = null;
+        let selectedCoin = 'BTC';
+        let chartData = [];
+        let timeframe = '1h';
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get user data from localStorage
+            loadUserData();
+            
+            // Initialize all components
+            initializeTradingPairs();
+            initializePortfolio();
+            initializeLiveTicker();
+            initializeChart();
+            initializeEventListeners();
+            
+            // Start live price updates
+            startLivePriceUpdates();
+            
+            // Update initial calculations
+            updateBuyCalculation();
+            updateSellCalculation();
+            
+            // Load initial activities
+            loadInitialActivities();
+        });
+
+        // ========== USER DATA ==========
+        function loadUserData() {
+            // Get user data from localStorage
+            const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+            
+            if (Object.keys(currentUser).length === 0) {
+                // No user found, redirect to login
+                alert('Please login first');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            accountData.username = currentUser.username || 'CryptoTrader';
+            accountData.email = currentUser.email || 'trader@quantumcoin.com';
+            accountData.balance = currentUser.balance || 1000.00;
+            accountData.portfolio = currentUser.portfolio || {};
+            accountData.activities = currentUser.activities || [];
+            accountData.totalTrades = currentUser.totalTrades || 0;
+            
+            // Calculate portfolio value
+            updatePortfolioValues();
+            
+            // Update UI with user data
+            updateUserDisplay();
+        }
+
+        function saveUserData() {
+            // Get current user from localStorage
+            let currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+            
+            // Update user data
+            currentUser.username = accountData.username;
+            currentUser.email = accountData.email;
+            currentUser.balance = accountData.balance;
+            currentUser.portfolio = accountData.portfolio;
+            currentUser.activities = accountData.activities;
+            currentUser.totalTrades = accountData.totalTrades;
+            currentUser.portfolioValue = accountData.portfolioValue;
+            
+            // Save back to localStorage
+            localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+        }
+
+        function updateUserDisplay() {
+            document.getElementById('usernameDisplay').textContent = accountData.username;
+            document.getElementById('greetingName').textContent = accountData.username;
+            document.getElementById('userEmail').textContent = accountData.email;
+            
+            const avatar = document.getElementById('userAvatar');
+            const initials = accountData.username.substring(0, 2).toUpperCase();
+            avatar.textContent = initials;
+            
+            // Set random avatar color
+            const colors = [
+                'linear-gradient(45deg, #00f0ff, #0077ff)',
+                'linear-gradient(45deg, #7b2cbf, #ff00c8)',
+                'linear-gradient(45deg, #00ff88, #00cc66)',
+                'linear-gradient(45deg, #ff6b6b, #ff0000)',
+                'linear-gradient(45deg, #ffcc00, #ff9900)'
+            ];
+            const colorIndex = accountData.username.length % colors.length;
+            avatar.style.background = colors[colorIndex];
+            
+            // Update account stats
+            updateAccountStats();
+        }
+
+        function updateAccountStats() {
+            document.getElementById('accountBalance').textContent = `$${accountData.balance.toFixed(2)}`;
+            document.getElementById('portfolioValue').textContent = `$${accountData.portfolioValue.toFixed(2)}`;
+            document.getElementById('dailyPL').textContent = `$${accountData.dailyPL.toFixed(2)}`;
+            document.getElementById('totalTrades').textContent = accountData.totalTrades;
+            document.getElementById('availableBalance').textContent = `$${accountData.balance.toFixed(2)}`;
+            document.getElementById('totalEquity').textContent = `$${(accountData.balance + accountData.portfolioValue).toFixed(2)}`;
+        }
+
+        // ========== LIVE PRICE UPDATES ==========
+        function startLivePriceUpdates() {
+            // Update prices every 3 seconds with realistic market movements
+            setInterval(() => {
+                updateAllPrices();
+                updateTradingPairs();
+                updatePortfolioValues();
+                updateChart();
+                updatePriceChangeIndicators();
+            }, 3000);
+        }
+
+        function updateAllPrices() {
+            for (const coin in cryptoData) {
+                // More realistic price changes based on volatility
+                let volatility = 0.02; // 2% base volatility
+                
+                // Adjust volatility based on coin type
+                if (coin === 'BTC' || coin === 'ETH') volatility = 0.01; // 1% for major coins
+                if (coin === 'DOGE' || coin === 'SHIB') volatility = 0.05; // 5% for meme coins
+                
+                // Generate price change with some market correlation
+                const marketTrend = Math.random() > 0.6 ? 1 : -1; // 60% chance of following trend
+                const changePercent = (Math.random() * volatility * marketTrend) + (Math.random() * 0.005 - 0.0025);
+                
+                const oldPrice = cryptoData[coin].price;
+                const newPrice = oldPrice * (1 + changePercent);
+                const priceChange = newPrice - oldPrice;
+                
+                // Update crypto data
+                cryptoData[coin].price = newPrice;
+                cryptoData[coin].change = (priceChange / oldPrice) * 100;
+                
+                // Update volume with some randomness
+                cryptoData[coin].volume *= (1 + Math.random() * 0.2 - 0.1);
+                
+                // Ensure volume doesn't go too low
+                if (cryptoData[coin].volume < 1000000) {
+                    cryptoData[coin].volume = 1000000;
+                }
+            }
+        }
+
+        // ========== TRADING PAIRS ==========
+        function initializeTradingPairs() {
+            const container = document.getElementById('tradingPairs');
+            container.innerHTML = '';
+            
+            // Sort coins by today's change (highest to lowest)
+            const sortedCoins = Object.entries(cryptoData)
+                .sort((a, b) => b[1].change - a[1].change);
+            
+            sortedCoins.forEach(([symbol, data]) => {
+                const pairCard = document.createElement('div');
+                pairCard.className = 'pair-card';
+                pairCard.dataset.symbol = symbol;
+                if (symbol === selectedCoin) pairCard.classList.add('active');
+                
+                const isPositive = data.change >= 0;
+                const volumeText = formatVolume(data.volume);
+                
+                pairCard.innerHTML = `
+                    <div class="price-flash ${isPositive ? 'flash-up' : 'flash-down'}"></div>
+                    <div class="pair-header">
+                        <div class="pair-icon" style="background: linear-gradient(135deg, ${data.color}, ${data.color}dd);">
+                            ${symbol.charAt(0)}
+                        </div>
+                        <div>
+                            <div class="pair-name">${symbol}</div>
+                        </div>
+                    </div>
+                    <div class="pair-price" id="price-${symbol}">$${formatPrice(data.price, symbol)}</div>
+                    <div class="pair-change ${isPositive ? 'positive' : 'negative'}" id="change-${symbol}">
+                        <i class="fas fa-${isPositive ? 'arrow-up' : 'arrow-down'}"></i>
+                        ${isPositive ? '+' : ''}${data.change.toFixed(2)}%
+                    </div>
+                    <div class="pair-volume">Vol: ${volumeText}</div>
+                `;
+                
+                pairCard.addEventListener('click', () => selectTradingPair(symbol));
+                container.appendChild(pairCard);
+            });
+        }
+
+        function updateTradingPairs() {
+            for (const [symbol, data] of Object.entries(cryptoData)) {
+                const priceElement = document.getElementById(`price-${symbol}`);
+                const changeElement = document.getElementById(`change-${symbol}`);
+                const pairCard = document.querySelector(`.pair-card[data-symbol="${symbol}"]`);
+                
+                if (priceElement && changeElement && pairCard) {
+                    const oldPrice = parseFloat(priceElement.textContent.replace('$', '').replace(/,/g, ''));
+                    const newPrice = data.price;
+                    const isPositive = data.change >= 0;
+                    const volumeText = formatVolume(data.volume);
+                    
+                    // Update price with animation
+                    priceElement.textContent = `$${formatPrice(newPrice, symbol)}`;
+                    changeElement.innerHTML = `<i class="fas fa-${isPositive ? 'arrow-up' : 'arrow-down'}"></i> ${isPositive ? '+' : ''}${data.change.toFixed(2)}%`;
+                    changeElement.className = `pair-change ${isPositive ? 'positive' : 'negative'}`;
+                    
+                    // Update volume
+                    const volumeElement = pairCard.querySelector('.pair-volume');
+                    if (volumeElement) {
+                        volumeElement.textContent = `Vol: ${volumeText}`;
+                    }
+                    
+                    // Add flash effect
+                    const flashDiv = pairCard.querySelector('.price-flash');
+                    if (newPrice > oldPrice) {
+                        pairCard.classList.add('price-up');
+                        flashDiv.classList.add('flash-up');
+                        flashDiv.classList.remove('flash-down');
+                        flashDiv.style.opacity = '0.5';
+                        setTimeout(() => {
+                            flashDiv.style.opacity = '0';
+                            pairCard.classList.remove('price-up');
+                        }, 1000);
+                    } else if (newPrice < oldPrice) {
+                        pairCard.classList.add('price-down');
+                        flashDiv.classList.add('flash-down');
+                        flashDiv.classList.remove('flash-up');
+                        flashDiv.style.opacity = '0.5';
+                        setTimeout(() => {
+                            flashDiv.style.opacity = '0';
+                            pairCard.classList.remove('price-down');
+                        }, 1000);
+                    }
+                    
+                    // Update form prices if this is the selected coin
+                    if (symbol === selectedCoin) {
+                        updateFormPrices(symbol);
+                        document.getElementById('selectedCoinName').textContent = `${data.name} (${symbol})`;
+                    }
+                }
+            }
+        }
+
+        function selectTradingPair(symbol) {
+            selectedCoin = symbol;
+            const coinData = cryptoData[symbol];
+            
+            // Update active state
+            document.querySelectorAll('.pair-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`.pair-card[data-symbol="${symbol}"]`).classList.add('active');
+            
+            // Update coin name display
+            document.getElementById('selectedCoinName').textContent = `${coinData.name} (${symbol})`;
+            
+            // Update forms
+            document.getElementById('buyCoin').value = symbol;
+            document.getElementById('sellCoin').value = symbol;
+            
+            // Update prices
+            updateFormPrices(symbol);
+            
+            // Update chart
+            updateChart();
+        }
+
+        // ========== LIVE TICKER ==========
+        function initializeLiveTicker() {
+            const ticker = document.getElementById('liveTicker');
+            
+            // Create two sets of ticker items for seamless scrolling
+            for (let i = 0; i < 2; i++) {
+                for (const [symbol, data] of Object.entries(cryptoData)) {
+                    const tickerItem = document.createElement('div');
+                    tickerItem.className = 'ticker-item';
+                    const isPositive = data.change >= 0;
+                    
+                    tickerItem.innerHTML = `
+                        <span class="ticker-symbol">${symbol}</span>
+                        <span class="ticker-price" id="ticker-price-${symbol}">$${formatPrice(data.price, symbol)}</span>
+                        <span class="ticker-change ${isPositive ? 'positive' : 'negative'}" 
+                              style="background: ${isPositive ? 'rgba(0,255,136,0.2)' : 'rgba(255,0,110,0.2)'}">
+                            ${isPositive ? '+' : ''}${data.change.toFixed(2)}%
+                        </span>
+                    `;
+                    ticker.appendChild(tickerItem);
+                }
+            }
+        }
+
+        // ========== CHART ==========
+        function initializeChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            // Generate initial chart data
+            chartData = generateChartData(selectedCoin, timeframe);
+            
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map((_, i) => i),
+                    datasets: [{
+                        label: `${selectedCoin} Price`,
+                        data: chartData,
+                        borderColor: cryptoData[selectedCoin].color,
+                        backgroundColor: `${cryptoData[selectedCoin].color}20`,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${selectedCoin}: $${context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(0, 240, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(226, 250, 252, 0.7)',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (!priceChart) return;
+            
+            // Add new data point
+            const newPrice = cryptoData[selectedCoin].price;
+            const noise = (Math.random() - 0.5) * 0.01 * newPrice;
+            chartData.push(newPrice + noise);
+            
+            // Keep appropriate number of points based on timeframe
+            let maxPoints = 100;
+            if (timeframe === '1h') maxPoints = 60;
+            if (timeframe === '1d') maxPoints = 24;
+            if (timeframe === '1w') maxPoints = 7;
+            if (timeframe === '1m') maxPoints = 30;
+            if (timeframe === '1y') maxPoints = 12;
+            
+            if (chartData.length > maxPoints) {
+                chartData.shift();
+            }
+            
+            // Update chart
+            priceChart.data.datasets[0].data = chartData;
+            priceChart.data.datasets[0].borderColor = cryptoData[selectedCoin].color;
+            priceChart.data.datasets[0].backgroundColor = `${cryptoData[selectedCoin].color}20`;
+            priceChart.update('none');
+        }
+
+        function generateChartData(symbol, timeframe) {
+            const basePrice = cryptoData[symbol].price;
+            const data = [];
+            let points = 100;
+            
+            if (timeframe === '1h') points = 60;
+            if (timeframe === '1d') points = 24;
+            if (timeframe === '1w') points = 7;
+            if (timeframe === '1m') points = 30;
+            if (timeframe === '1y') points = 12;
+            
+            let currentPrice = basePrice;
+            for (let i = 0; i < points; i++) {
+                // Generate realistic price movement
+                const change = (Math.random() - 0.5) * 0.02;
+                currentPrice = currentPrice * (1 + change);
+                data.push(currentPrice);
+            }
+            
+            return data;
+        }
+
+        // ========== PORTFOLIO ==========
+        function initializePortfolio() {
+            // Ensure portfolio exists
+            if (!accountData.portfolio) {
+                accountData.portfolio = {};
+            }
+            updatePortfolioDisplay();
+        }
+
+        function updatePortfolioValues() {
+            let totalValue = 0;
+            let totalChange = 0;
+            let itemsCount = 0;
+            
+            for (const [coin, holdings] of Object.entries(accountData.portfolio)) {
+                if (cryptoData[coin]) {
+                    const currentValue = holdings.amount * cryptoData[coin].price;
+                    const purchaseValue = holdings.purchaseValue || currentValue;
+                    holdings.currentValue = currentValue;
+                    holdings.change = ((currentValue - purchaseValue) / purchaseValue) * 100;
+                    
+                    totalValue += currentValue;
+                    totalChange += holdings.change;
+                    itemsCount++;
+                }
+            }
+            
+            accountData.portfolioValue = totalValue;
+            
+            // Update portfolio change display
+            const avgChange = itemsCount > 0 ? totalChange / itemsCount : 0;
+            const portfolioChangeEl = document.getElementById('portfolioChange');
+            if (portfolioChangeEl) {
+                portfolioChangeEl.textContent = `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%`;
+                portfolioChangeEl.className = avgChange >= 0 ? 'positive' : 'negative';
+            }
+            
+            updatePortfolioDisplay();
+            saveUserData(); // Save updated portfolio data
+        }
+
+        function updatePortfolioDisplay() {
+            const container = document.getElementById('portfolioList');
+            
+            // Clear container
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            
+            // Add portfolio items
+            let hasHoldings = false;
+            
+            for (const [coin, holdings] of Object.entries(accountData.portfolio)) {
+                if (holdings.amount > 0 && cryptoData[coin]) {
+                    hasHoldings = true;
+                    const item = document.createElement('div');
+                    item.className = 'portfolio-item';
+                    
+                    const currentValue = holdings.currentValue || holdings.amount * cryptoData[coin].price;
+                    const changePercent = holdings.change || 0;
+                    const isPositive = changePercent >= 0;
+                    
+                    item.innerHTML = `
+                        <div class="coin-info">
+                            <div class="pair-icon" style="background: linear-gradient(135deg, ${cryptoData[coin].color}, ${cryptoData[coin].color}dd);">
+                                ${coin.charAt(0)}
+                            </div>
+                            <div>
+                                <div class="coin-amount">${formatAmount(holdings.amount, coin)} ${coin}</div>
+                                <div class="coin-value">$${currentValue.toFixed(2)}</div>
+                            </div>
+                        </div>
+                        <div class="coin-change ${isPositive ? 'positive' : 'negative'}">
+                            ${isPositive ? '+' : ''}${changePercent.toFixed(2)}%
+                        </div>
+                    `;
+                    container.appendChild(item);
+                }
+            }
+            
+            // Show message if no holdings
+            if (!hasHoldings) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'portfolio-item';
+                emptyMessage.innerHTML = `
+                    <div class="coin-info">
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: rgba(0, 240, 255, 0.1); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-wallet" style="color: rgba(226, 250, 252, 0.5);"></i>
+                        </div>
+                        <div>
+                            <div class="coin-amount">No holdings yet</div>
+                            <div class="coin-value">Start trading to build your portfolio</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(emptyMessage);
+            }
+            
+            // Update account stats
+            updateAccountStats();
+        }
+
+        // ========== TRADING FUNCTIONS ==========
+        function updateFormPrices(symbol) {
+            const data = cryptoData[symbol];
+            const buyPrice = document.getElementById('buyPrice');
+            const sellPrice = document.getElementById('sellPrice');
+            const buyPriceChange = document.getElementById('buyPriceChange');
+            const sellPriceChange = document.getElementById('sellPriceChange');
+            
+            if (buyPrice) {
+                buyPrice.value = `$${formatPrice(data.price, symbol)}`;
+            }
+            if (sellPrice) {
+                sellPrice.value = `$${formatPrice(data.price, symbol)}`;
+            }
+            
+            // Update price change indicators
+            const isPositive = data.change >= 0;
+            const changeText = `${isPositive ? '+' : ''}${data.change.toFixed(2)}%`;
+            
+            if (buyPriceChange) {
+                buyPriceChange.textContent = changeText;
+                buyPriceChange.style.background = isPositive ? 'rgba(0,255,136,0.2)' : 'rgba(255,0,110,0.2)';
+                buyPriceChange.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+            }
+            
+            if (sellPriceChange) {
+                sellPriceChange.textContent = changeText;
+                sellPriceChange.style.background = isPositive ? 'rgba(0,255,136,0.2)' : 'rgba(255,0,110,0.2)';
+                sellPriceChange.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+            }
+            
+            updateBuyCalculation();
+            updateSellCalculation();
+        }
+
+        function updatePriceChangeIndicators() {
+            const symbol = selectedCoin;
+            const data = cryptoData[symbol];
+            const buyPriceChange = document.getElementById('buyPriceChange');
+            const sellPriceChange = document.getElementById('sellPriceChange');
+            
+            if (buyPriceChange && sellPriceChange) {
+                const isPositive = data.change >= 0;
+                const changeText = `${isPositive ? '+' : ''}${data.change.toFixed(2)}%`;
+                
+                buyPriceChange.textContent = changeText;
+                buyPriceChange.style.background = isPositive ? 'rgba(0,255,136,0.2)' : 'rgba(255,0,110,0.2)';
+                buyPriceChange.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+                
+                sellPriceChange.textContent = changeText;
+                sellPriceChange.style.background = isPositive ? 'rgba(0,255,136,0.2)' : 'rgba(255,0,110,0.2)';
+                sellPriceChange.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+            }
+        }
+
+        function updateBuyCalculation() {
+            const amount = parseFloat(document.getElementById('buyAmount').value) || 0;
+            const symbol = document.getElementById('buyCoin').value;
+            const price = cryptoData[symbol].price;
+            
+            const total = amount;
+            const fee = total * 0.001; // 0.1% fee
+            const receiveAmount = (total - fee) / price;
+            
+            document.getElementById('buyTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('buyFee').textContent = `$${fee.toFixed(2)}`;
+            document.getElementById('buyReceive').textContent = `${formatAmount(receiveAmount, symbol)} ${symbol}`;
+        }
+
+        function updateSellCalculation() {
+            const amount = parseFloat(document.getElementById('sellAmount').value) || 0;
+            const symbol = document.getElementById('sellCoin').value;
+            const price = cryptoData[symbol].price;
+            const holdings = accountData.portfolio[symbol]?.amount || 0;
+            
+            // Auto-adjust to max holdings if amount exceeds
+            if (amount > holdings) {
+                document.getElementById('sellAmount').value = holdings;
+                return updateSellCalculation();
+            }
+            
+            const total = amount * price;
+            const fee = total * 0.001; // 0.1% fee
+            const receiveAmount = total - fee;
+            
+            document.getElementById('sellTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('sellFee').textContent = `$${fee.toFixed(2)}`;
+            document.getElementById('sellReceive').textContent = `$${receiveAmount.toFixed(2)}`;
+        }
+
+        // ========== EVENT LISTENERS ==========
+        function initializeEventListeners() {
+            // Trade tabs
+            document.querySelectorAll('.trade-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    
+                    // Update active tab
+                    document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show corresponding form
+                    document.querySelectorAll('.trade-form').forEach(form => form.classList.remove('active'));
+                    document.getElementById(`${tabName}Form`).classList.add('active');
+                });
+            });
+            
+            // Buy form inputs
+            document.getElementById('buyAmount').addEventListener('input', updateBuyCalculation);
+            document.getElementById('buyCoin').addEventListener('change', function() {
+                selectTradingPair(this.value);
+            });
+            
+            // Sell form inputs
+            document.getElementById('sellAmount').addEventListener('input', updateSellCalculation);
+            document.getElementById('sellCoin').addEventListener('change', function() {
+                selectTradingPair(this.value);
+            });
+            
+            // Amount buttons
+            document.querySelectorAll('#buyForm .amount-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const amount = this.dataset.amount;
+                    document.getElementById('buyAmount').value = amount;
+                    updateBuyCalculation();
+                });
+            });
+            
+            document.querySelectorAll('#sellForm .amount-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const percent = this.dataset.percent;
+                    const symbol = document.getElementById('sellCoin').value;
+                    const maxAmount = accountData.portfolio[symbol]?.amount || 0;
+                    const amount = (maxAmount * percent) / 100;
+                    document.getElementById('sellAmount').value = formatAmount(amount, symbol, true);
+                    updateSellCalculation();
+                });
+            });
+            
+            // Buy/Sell forms
+            document.getElementById('buyForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                executeTrade('buy');
+            });
+            
+            document.getElementById('sellForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                executeTrade('sell');
+            });
+            
+            // Deposit/Withdraw buttons - TEMPORARY MODAL UNTIL SEPARATE PAGES ARE CREATED
+            document.getElementById('depositBtn').addEventListener('click', function() {
+                showDepositModal();
+            });
+            
+            document.getElementById('withdrawBtn').addEventListener('click', function() {
+                showWithdrawModal();
+            });
+            
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to logout?')) {
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            // Notification bell
+            document.getElementById('notificationBell').addEventListener('click', showNotifications);
+            
+            // Timeframe buttons
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    timeframe = this.dataset.timeframe;
+                    document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Regenerate chart data for new timeframe
+                    chartData = generateChartData(selectedCoin, timeframe);
+                    if (priceChart) {
+                        priceChart.data.datasets[0].data = chartData;
+                        priceChart.update();
+                    }
+                });
+            });
+        }
+
+        // ========== DEPOSIT/WITHDRAW MODALS ==========
+        function showDepositModal() {
+            const modalHtml = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 16, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px);">
+                    <div style="background: rgba(10, 10, 31, 0.95); padding: 30px; border-radius: 20px; max-width: 500px; width: 90%; border: 1px solid rgba(0, 240, 255, 0.3); box-shadow: 0 0 50px rgba(0, 240, 255, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                            <h2 style="font-size: 1.8rem; background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent;">Deposit Funds</h2>
+                            <button id="closeModal" style="background: transparent; border: none; color: var(--light); font-size: 1.5rem; cursor: pointer;">&times;</button>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Amount (USD)</label>
+                            <input type="number" id="depositAmount" style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light); font-size: 1.1rem;" value="100" min="10" step="0.01">
+                        </div>
+                        
+                        <div style="margin-bottom: 25px;">
+                            <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Payment Method</label>
+                            <select style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light);">
+                                <option>Credit/Debit Card</option>
+                                <option>Bank Transfer</option>
+                                <option>Crypto Wallet</option>
+                                <option>PayPal</option>
+                            </select>
+                        </div>
+                        
+                        <div style="background: rgba(0, 240, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 25px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
+                                <span>Deposit Amount:</span>
+                                <span id="modalDepositAmount">$100.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
+                                <span>Processing Fee:</span>
+                                <span>$0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--primary);">
+                                <span>Total to Deposit:</span>
+                                <span id="modalTotalDeposit">$100.00</span>
+                            </div>
+                        </div>
+                        
+                        <button id="confirmDeposit" style="width: 100%; padding: 15px; background: linear-gradient(45deg, var(--primary), var(--secondary)); color: var(--darker); border: none; border-radius: 10px; font-weight: 600; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease;">
+                            <i class="fas fa-plus-circle"></i> Confirm Deposit
+                        </button>
+                        
+                        <p style="margin-top: 15px; color: rgba(226, 250, 252, 0.6); font-size: 0.85rem; text-align: center;">
+                            Funds will be available in your account within 5 minutes
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            // Create modal
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = modalHtml;
+            document.body.appendChild(modalDiv);
+            
+            // Update deposit amount in real-time
+            const depositInput = modalDiv.querySelector('#depositAmount');
+            const depositAmountSpan = modalDiv.querySelector('#modalDepositAmount');
+            const totalDepositSpan = modalDiv.querySelector('#modalTotalDeposit');
+            
+            depositInput.addEventListener('input', function() {
+                const amount = parseFloat(this.value) || 0;
+                depositAmountSpan.textContent = `$${amount.toFixed(2)}`;
+                totalDepositSpan.textContent = `$${amount.toFixed(2)}`;
+            });
+            
+            // Confirm deposit
+            modalDiv.querySelector('#confirmDeposit').addEventListener('click', function() {
+                const amount = parseFloat(depositInput.value) || 0;
+                if (amount < 10) {
+                    alert('Minimum deposit is $10');
+                    return;
+                }
+                
+                // Process deposit
+                accountData.balance += amount;
+                addActivity('deposit', 'USD', amount, amount);
+                updateAccountStats();
+                saveUserData();
+                
+                // Show success
+                showNotification(`Successfully deposited $${amount.toFixed(2)}!`);
+                
+                // Close modal
+                document.body.removeChild(modalDiv);
+            });
+            
+            // Close modal
+            modalDiv.querySelector('#closeModal').addEventListener('click', function() {
+                document.body.removeChild(modalDiv);
+            });
+            
+            // Close when clicking outside
+            modalDiv.addEventListener('click', function(e) {
+                if (e.target === modalDiv) {
+                    document.body.removeChild(modalDiv);
+                }
+            });
+        }
+
+        function showWithdrawModal() {
+            const modalHtml = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 5, 16, 0.95); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px);">
+                    <div style="background: rgba(10, 10, 31, 0.95); padding: 30px; border-radius: 20px; max-width: 500px; width: 90%; border: 1px solid rgba(0, 240, 255, 0.3); box-shadow: 0 0 50px rgba(0, 240, 255, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                            <h2 style="font-size: 1.8rem; background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent;">Withdraw Funds</h2>
+                            <button id="closeModal" style="background: transparent; border: none; color: var(--light); font-size: 1.5rem; cursor: pointer;">&times;</button>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px; color: rgba(226, 250, 252, 0.8);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Available Balance:</span>
+                                <span style="color: var(--primary); font-weight: 600;">$${accountData.balance.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Amount (USD)</label>
+                            <input type="number" id="withdrawAmount" style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light); font-size: 1.1rem;" value="100" min="10" step="0.01" max="${accountData.balance}">
+                        </div>
+                        
+                        <div style="margin-bottom: 25px;">
+                            <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Withdrawal Method</label>
+                            <select style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light);">
+                                <option>Bank Transfer</option>
+                                <option>PayPal</option>
+                                <option>Crypto Wallet</option>
+                            </select>
+                        </div>
+                        
+                        <div style="background: rgba(0, 240, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 25px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
+                                <span>Withdrawal Amount:</span>
+                                <span id="modalWithdrawAmount">$100.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
+                                <span>Processing Fee (1%):</span>
+                                <span id="modalWithdrawFee">$1.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--primary);">
+                                <span>You Will Receive:</span>
+                                <span id="modalNetWithdraw">$99.00</span>
+                            </div>
+                        </div>
+                        
+                        <button id="confirmWithdraw" style="width: 100%; padding: 15px; background: linear-gradient(45deg, var(--danger), #cc0055); color: var(--light); border: none; border-radius: 10px; font-weight: 600; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease;">
+                            <i class="fas fa-external-link-alt"></i> Confirm Withdrawal
+                        </button>
+                        
+                        <p style="margin-top: 15px; color: rgba(226, 250, 252, 0.6); font-size: 0.85rem; text-align: center;">
+                            Withdrawals are processed within 24 hours
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            // Create modal
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = modalHtml;
+            document.body.appendChild(modalDiv);
+            
+            // Update withdrawal amount in real-time
+            const withdrawInput = modalDiv.querySelector('#withdrawAmount');
+            const withdrawAmountSpan = modalDiv.querySelector('#modalWithdrawAmount');
+            const withdrawFeeSpan = modalDiv.querySelector('#modalWithdrawFee');
+            const netWithdrawSpan = modalDiv.querySelector('#modalNetWithdraw');
+            
+            function updateWithdrawCalculation() {
+                const amount = parseFloat(withdrawInput.value) || 0;
+                const maxAmount = accountData.balance;
+                
+                // Cap amount at available balance
+                if (amount > maxAmount) {
+                    withdrawInput.value = maxAmount;
+                    return updateWithdrawCalculation();
+                }
+                
+                const fee = amount * 0.01; // 1% fee
+                const netAmount = amount - fee;
+                
+                withdrawAmountSpan.textContent = `$${amount.toFixed(2)}`;
+                withdrawFeeSpan.textContent = `$${fee.toFixed(2)}`;
+                netWithdrawSpan.textContent = `$${netAmount.toFixed(2)}`;
+            }
+            
+            withdrawInput.addEventListener('input', updateWithdrawCalculation);
+            updateWithdrawCalculation();
+            
+            // Confirm withdrawal
+            modalDiv.querySelector('#confirmWithdraw').addEventListener('click', function() {
+                const amount = parseFloat(withdrawInput.value) || 0;
+                
+                if (amount < 10) {
+                    alert('Minimum withdrawal is $10');
+                    return;
+                }
+                
+                if (amount > accountData.balance) {
+                    alert('Insufficient balance!');
+                    return;
+                }
+                
+                const fee = amount * 0.01;
+                const netAmount = amount - fee;
+                
+                // Process withdrawal
+                accountData.balance -= amount;
+                addActivity('withdraw', 'USD', amount, netAmount, fee);
+                updateAccountStats();
+                saveUserData();
+                
+                // Show success
+                showNotification(`Withdrawal request for $${amount.toFixed(2)} submitted! You will receive $${netAmount.toFixed(2)} (fee: $${fee.toFixed(2)})`);
+                
+                // Close modal
+                document.body.removeChild(modalDiv);
+            });
+            
+            // Close modal
+            modalDiv.querySelector('#closeModal').addEventListener('click', function() {
+                document.body.removeChild(modalDiv);
+            });
+            
+            // Close when clicking outside
+            modalDiv.addEventListener('click', function(e) {
+                if (e.target === modalDiv) {
+                    document.body.removeChild(modalDiv);
+                }
+            });
+        }
+
+        function executeTrade(type) {
+            const form = type === 'buy' ? document.getElementById('buyForm') : document.getElementById('sellForm');
+            const symbol = form.querySelector('select').value;
+            const amount = parseFloat(form.querySelector('input[type="number"]').value);
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            const price = cryptoData[symbol].price;
+            const feeRate = 0.001; // 0.1%
+            
+            if (type === 'buy') {
+                const totalCost = amount;
+                const feeAmount = totalCost * feeRate;
+                const coinAmount = (totalCost - feeAmount) / price;
+                
+                if (totalCost > accountData.balance) {
+                    alert('Insufficient balance! Please deposit more funds.');
+                    return;
+                }
+                
+                // Update account
+                accountData.balance -= totalCost;
+                if (!accountData.portfolio[symbol]) {
+                    accountData.portfolio[symbol] = { 
+                        amount: 0, 
+                        purchaseValue: 0,
+                        currentValue: 0,
+                        change: 0
+                    };
+                }
+                accountData.portfolio[symbol].amount += coinAmount;
+                accountData.portfolio[symbol].purchaseValue = 
+                    (accountData.portfolio[symbol].purchaseValue || 0) + totalCost;
+                accountData.totalTrades++;
+                accountData.dailyPL -= feeAmount;
+                
+                // Add activity
+                addActivity('buy', symbol, coinAmount, totalCost, feeAmount);
+                
+                // Show success message
+                showTradeNotification('buy', symbol, coinAmount, totalCost);
+                
+            } else { // sell
+                const coinAmount = amount;
+                const totalValue = coinAmount * price;
+                const feeAmount = totalValue * feeRate;
+                const receiveAmount = totalValue - feeAmount;
+                
+                if (!accountData.portfolio[symbol] || accountData.portfolio[symbol].amount < coinAmount) {
+                    alert('Insufficient coin balance!');
+                    return;
+                }
+                
+                // Calculate profit/loss
+                const purchaseValue = (coinAmount / accountData.portfolio[symbol].amount) * 
+                    (accountData.portfolio[symbol].purchaseValue || 0);
+                const profitLoss = totalValue - purchaseValue - feeAmount;
+                
+                // Update account
+                accountData.balance += receiveAmount;
+                accountData.portfolio[symbol].amount -= coinAmount;
+                accountData.portfolio[symbol].purchaseValue -= purchaseValue;
+                accountData.totalTrades++;
+                accountData.dailyPL += profitLoss;
+                
+                // Remove coin from portfolio if amount is zero
+                if (accountData.portfolio[symbol].amount <= 0) {
+                    delete accountData.portfolio[symbol];
+                }
+                
+                // Add activity
+                addActivity('sell', symbol, coinAmount, receiveAmount, feeAmount, profitLoss);
+                
+                // Show success message
+                showTradeNotification('sell', symbol, coinAmount, receiveAmount);
+            }
+            
+            // Save user data
+            saveUserData();
+            
+            // Update UI
+            updatePortfolioValues();
+            
+            // Reset forms
+            if (type === 'buy') {
+                document.getElementById('buyAmount').value = '100';
+                updateBuyCalculation();
+            } else {
+                document.getElementById('sellAmount').value = '0.1';
+                updateSellCalculation();
+            }
+        }
+
+        function addActivity(type, symbol, amount, value, fee = 0, profitLoss = 0) {
+            const activities = {
+                buy: { icon: 'fa-shopping-cart', color: 'var(--success)', text: 'Bought' },
+                sell: { icon: 'fa-dollar-sign', color: 'var(--danger)', text: 'Sold' },
+                deposit: { icon: 'fa-plus-circle', color: 'var(--primary)', text: 'Deposited' },
+                withdraw: { icon: 'fa-external-link-alt', color: 'var(--warning)', text: 'Withdrew' }
+            };
+            
+            const activity = activities[type];
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const date = new Date().toLocaleDateString();
+            
+            const activityItem = {
+                type,
+                symbol,
+                amount,
+                value,
+                fee,
+                profitLoss,
+                timestamp,
+                date,
+                activity
+            };
+            
+            accountData.activities.unshift(activityItem);
+            
+            // Keep only last 10 activities
+            if (accountData.activities.length > 10) {
+                accountData.activities.pop();
+            }
+            
+            updateActivityDisplay();
+            
+            // Update notification count
+            const tradeCount = accountData.activities.filter(a => a.type === 'buy' || a.type === 'sell').length;
+            document.getElementById('notificationCount').textContent = tradeCount;
+        }
+
+        function loadInitialActivities() {
+            // Only add initial activities if user has none
+            if (accountData.activities.length === 0) {
+                addActivity('deposit', 'USD', 1000, 1000);
+                addActivity('buy', 'BTC', 0.01, 432.50, 0.43);
+                addActivity('buy', 'ETH', 0.1, 235.05, 0.24);
+            }
+        }
+
+        function updateActivityDisplay() {
+            const container = document.getElementById('activityList');
+            container.innerHTML = '';
+            
+            accountData.activities.forEach(activity => {
+                const item = document.createElement('div');
+                item.className = 'activity-item';
+                
+                const isPositive = activity.type === 'buy' || activity.type === 'deposit';
+                const valuePrefix = isPositive ? '+' : '-';
+                
+                // Format amount based on symbol
+                const amountText = activity.symbol === 'USD' ? 
+                    `$${activity.amount.toFixed(2)}` : 
+                    `${formatAmount(activity.amount, activity.symbol)} ${activity.symbol}`;
+                
+                item.innerHTML = `
+                    <div class="activity-info">
+                        <div class="activity-icon" style="background: ${activity.activity.color}20; color: ${activity.activity.color};">
+                            <i class="fas ${activity.activity.icon}"></i>
+                        </div>
+                        <div class="activity-details">
+                            <h4>${activity.activity.text} ${amountText}</h4>
+                            <p>${activity.date} ${activity.timestamp}</p>
+                        </div>
+                    </div>
+                    <div class="activity-amount ${isPositive ? 'positive-amount' : 'negative-amount'}">
+                        ${valuePrefix}$${activity.value.toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function showTradeNotification(type, symbol, amount, value) {
+            const action = type === 'buy' ? 'bought' : 'sold';
+            const message = `Successfully ${action} ${formatAmount(amount, symbol)} ${symbol} for $${value.toFixed(2)}`;
+            showNotification(message);
+        }
+
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(10, 10, 31, 0.95);
+                color: var(--light);
+                padding: 15px 20px;
+                border-radius: 10px;
+                border: 1px solid rgba(0, 240, 255, 0.3);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                z-index: 1000;
+                max-width: 300px;
+                animation: slideIn 0.3s ease;
+                backdrop-filter: blur(10px);
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        function showNotifications() {
+            const tradeActivities = accountData.activities.filter(a => a.type === 'buy' || a.type === 'sell');
+            if (tradeActivities.length > 0) {
+                let message = `You have ${tradeActivities.length} recent trades:\n\n`;
+                tradeActivities.slice(0, 3).forEach(activity => {
+                    const action = activity.type === 'buy' ? 'Bought' : 'Sold';
+                    message += `• ${action} ${formatAmount(activity.amount, activity.symbol)} ${activity.symbol} for $${activity.value.toFixed(2)}\n`;
+                });
+                if (tradeActivities.length > 3) {
+                    message += `\n... and ${tradeActivities.length - 3} more trades`;
+                }
+                alert(message);
+            } else {
+                alert('No recent trade notifications');
+            }
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
+        function formatPrice(price, symbol) {
+            if (price >= 1000) {
+                return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else if (price >= 1) {
+                return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+            } else if (price >= 0.01) {
+                return price.toFixed(4);
+            } else if (price >= 0.0001) {
+                return price.toFixed(6);
+            } else {
+                return price.toFixed(8);
+            }
+        }
+
+        function formatAmount(amount, symbol, forInput = false) {
+            if (symbol === 'BTC' || symbol === 'ETH' || symbol === 'BNB') {
+                return forInput ? amount.toFixed(8) : amount.toFixed(6).replace(/\.?0+$/, '');
+            } else if (symbol === 'DOGE' || symbol === 'XRP' || symbol === 'ADA') {
+                return forInput ? amount.toFixed(2) : amount.toFixed(2).replace(/\.?0+$/, '');
+            } else if (symbol === 'SHIB') {
+                return forInput ? amount.toFixed(0) : amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+            } else {
+                return forInput ? amount.toFixed(4) : amount.toFixed(4).replace(/\.?0+$/, '');
+            }
+        }
+
+        function formatVolume(volume) {
+            if (volume >= 1000000000) {
+                return `$${(volume / 1000000000).toFixed(2)}B`;
+            } else if (volume >= 1000000) {
+                return `$${(volume / 1000000).toFixed(2)}M`;
+            } else if (volume >= 1000) {
+                return `$${(volume / 1000).toFixed(2)}K`;
+            } else {
+                return `$${volume.toFixed(2)}`;
+            }
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .price-up {
+                animation: flashGreen 1s ease;
+            }
+            
+            .price-down {
+                animation: flashRed 1s ease;
+            }
+            
+            @keyframes flashGreen {
+                0% { background-color: transparent; }
+                50% { background-color: rgba(0, 255, 136, 0.1); }
+                100% { background-color: transparent; }
+            }
+            
+            @keyframes flashRed {
+                0% { background-color: transparent; }
+                50% { background-color: rgba(255, 0, 110, 0.1); }
+                100% { background-color: transparent; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

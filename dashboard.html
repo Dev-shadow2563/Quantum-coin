@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,8 +6,6 @@
     <title>QuantumCoin Dashboard | Live Crypto Trading</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@1.0.0-alpha/dist/chartjs-chart-financial.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -861,6 +858,9 @@
             padding: 25px;
             border: 1px solid rgba(0, 240, 255, 0.1);
             backdrop-filter: blur(10px);
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
         }
 
         .chat-header {
@@ -870,69 +870,61 @@
             margin-bottom: 20px;
         }
 
-        .chat-container {
-            height: 300px;
+        .chat-messages {
+            flex: 1;
             overflow-y: auto;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             padding-right: 10px;
         }
 
-        .chat-messages {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            background: rgba(0, 240, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
         }
 
-        .chat-message {
-            padding: 12px 15px;
-            border-radius: 15px;
-            max-width: 85%;
+        .chat-message .username {
+            font-weight: 600;
+            color: var(--primary);
+            margin-right: 5px;
+        }
+
+        .chat-message .message {
+            color: rgba(226, 250, 252, 0.8);
             word-wrap: break-word;
         }
 
-        .message-incoming {
-            background: rgba(0, 240, 255, 0.1);
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
-        }
-
-        .message-outgoing {
-            background: rgba(123, 44, 191, 0.2);
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
-        }
-
-        .message-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.8rem;
-        }
-
-        .message-user {
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .message-time {
+        .chat-message .time {
+            font-size: 0.7rem;
             color: rgba(226, 250, 252, 0.5);
+            text-align: right;
+            margin-top: 3px;
         }
 
-        .message-text {
-            font-size: 0.9rem;
-            line-height: 1.4;
+        .chat-input {
+            display: flex;
+            gap: 10px;
         }
 
-        .message-success {
-            color: var(--success);
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0, 240, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 8px;
+            color: var(--light);
         }
 
-        .message-warning {
-            color: var(--warning);
-        }
-
-        .message-danger {
-            color: var(--danger);
+        .chat-input button {
+            padding: 10px 20px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: var(--darker);
+            font-weight: 600;
+            cursor: pointer;
         }
 
         /* Notification Bell */
@@ -1089,59 +1081,6 @@
             background: rgba(0, 240, 255, 0.1);
             color: var(--light);
             border: 1px solid rgba(0, 240, 255, 0.3);
-        }
-
-        /* Wallet Address Display */
-        .wallet-address {
-            background: rgba(0, 240, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-
-        .copy-btn {
-            margin-top: 10px;
-            padding: 8px 15px;
-            background: rgba(0, 240, 255, 0.1);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            color: var(--primary);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .copy-btn:hover {
-            background: rgba(0, 240, 255, 0.2);
-        }
-
-        /* Payment Status */
-        .payment-status {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .status-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        .status-success {
-            color: var(--success);
-        }
-
-        .status-warning {
-            color: var(--warning);
-        }
-
-        .status-info {
-            color: var(--primary);
         }
 
         /* Responsive */
@@ -1317,9 +1256,9 @@
                 </div>
                 
                 <ul class="nav-menu">
-                    <li><a href="#" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="#"><i class="fas fa-exchange-alt"></i> Trading</a></li>
-                    <li><a href="#"><i class="fas fa-wallet"></i> Wallet</a></li>
+                    <li><a href="dashboard.html" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    <li><a href="deposit.html"><i class="fas fa-plus-circle"></i> Deposit</a></li>
+                    <li><a href="withdraw.html"><i class="fas fa-external-link-alt"></i> Withdraw</a></li>
                     <li><a href="#"><i class="fas fa-history"></i> History</a></li>
                     <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
                     <li><a href="#"><i class="fas fa-question-circle"></i> Support</a></li>
@@ -1346,10 +1285,10 @@
                                 <span class="positive"><i class="fas fa-arrow-up"></i> Add funds to start trading</span>
                             </p>
                             <div class="balance-actions">
-                                <button class="balance-btn deposit-balance-btn" data-account="funding">
+                                <button class="balance-btn deposit-balance-btn" data-account="funding" onclick="window.location.href='deposit.html'">
                                     <i class="fas fa-plus-circle"></i> Add Funds
                                 </button>
-                                <button class="balance-btn withdraw-balance-btn" data-account="funding">
+                                <button class="balance-btn withdraw-balance-btn" data-account="funding" onclick="window.location.href='withdraw.html'">
                                     <i class="fas fa-external-link-alt"></i> Withdraw
                                 </button>
                             </div>
@@ -1576,47 +1515,15 @@
                 <!-- Live Chat -->
                 <div class="live-chat">
                     <div class="chat-header">
-                        <h2>Live Community Chat</h2>
-                        <span id="onlineUsers">24 Online</span>
+                        <h2>Live Chat</h2>
+                        <span class="positive" style="font-size: 0.8rem;"><i class="fas fa-users"></i> 124 Online</span>
                     </div>
-                    <div class="chat-container" id="chatContainer">
-                        <div class="chat-messages" id="chatMessages">
-                            <!-- Chat messages will be loaded here -->
-                        </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Chat messages will be added here -->
                     </div>
-                </div>
-
-                <!-- Withdraw/Deposit -->
-                <div class="wallet-actions">
-                    <h2>Wallet Actions</h2>
-                    <p style="margin-top: 10px; color: rgba(226, 250, 252, 0.7); font-size: 0.9rem;">
-                        Add funds to start trading or withdraw your profits
-                    </p>
-                    
-                    <div class="action-buttons">
-                        <button class="action-btn deposit-btn" id="depositBtn">
-                            <i class="fas fa-plus-circle"></i>
-                            Deposit Funds
-                        </button>
-                        <button class="action-btn withdraw-btn" id="withdrawBtn">
-                            <i class="fas fa-external-link-alt"></i>
-                            Withdraw
-                        </button>
-                    </div>
-                    
-                    <div class="trade-summary" style="margin-top: 20px;">
-                        <div class="summary-row">
-                            <span>Available Balance</span>
-                            <span id="availableBalance">$3,506.83</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>In Open Orders</span>
-                            <span>$0.00</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Total Equity</span>
-                            <span id="totalEquity">$3,506.83</span>
-                        </div>
+                    <div class="chat-input">
+                        <input type="text" id="chatInput" placeholder="Type your message...">
+                        <button id="sendMessageBtn"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
 
@@ -1661,7 +1568,7 @@
         let cryptoData = {
             BTC: { name: 'Bitcoin', price: 42869.29, change: 5.32, volume: 24500000000, marketCap: 847200000000, color: '#f7931a' },
             ETH: { name: 'Ethereum', price: 2350.45, change: 3.21, volume: 9800000000, marketCap: 282000000000, color: '#627eea' },
-            DOGE: { name: 'Dogecoin', price: 0.089, change: 12.45, volume: 1200000000, marketCap: 12700000000, color: '#7b2cbf' },
+            DOGE: { name: 'Dogecoin', price: 0.089, change: 12.45, volume: 1200000000, marketCap: 12700000000, color: '#c2a633' },
             SHIB: { name: 'Shiba Inu', price: 0.00000876, change: 23.67, volume: 480000000, marketCap: 5200000000, color: '#ff00c8' },
             ADA: { name: 'Cardano', price: 0.52, change: -1.23, volume: 320000000, marketCap: 18500000000, color: '#0033ad' },
             SOL: { name: 'Solana', price: 95.67, change: 7.89, volume: 2100000000, marketCap: 42000000000, color: '#00ffa3' },
@@ -1681,32 +1588,13 @@
         let selectedCoin = 'BTC';
         let chartType = 'candlestick';
         let timeframe = '1h';
-        
-        // Telegram configuration
-        const TELEGRAM_CONFIG = {
-            deposit: {
-                botToken: '8304596617:AAEAn7Q_udfFEGVqcpHeZi39cO6Iof7q2JE',
-                chatId: '-5046795522'
-            },
-            withdraw: {
-                botToken: '8524688798:AAH2wyXiliUT73GjLs_VdR5i2TCPiuYtEFs',
-                chatId: '-5046795522'
-            },
-            walletAddress: 'bc1qcl79ftwdhes0kzpcpgyt5t24m59m0vsa35rkhy'
-        };
+        let chartData = [];
 
-        // Live chat messages
-        const chatMessages = [
-            { user: "CryptoKing", time: "2 min ago", text: "Just withdrew $5,000 from my funding account! Process was super smooth! 💰", type: "success" },
-            { user: "BitcoinBaby", time: "5 min ago", text: "Lost $200 on DOGE but learning from my mistakes! Next time will be better! 📈", type: "warning" },
-            { user: "TradingPro", time: "12 min ago", text: "This platform is amazing! Made $1,500 profit in just 2 days! 🚀", type: "success" },
-            { user: "MoonShooter", time: "18 min ago", text: "Deposited $1,000 and already up 15% on BTC! Loving this! 🌙", type: "success" },
-            { user: "CryptoQueen", time: "25 min ago", text: "Withdrew $3,200 to my wallet, got it in 20 minutes! Fast! ⚡", type: "success" },
-            { user: "RiskTaker", time: "32 min ago", text: "Took a $500 loss on SHIB, but still believe in the project! 😅", type: "danger" },
-            { user: "ProfitMaker", time: "40 min ago", text: "Up $800 today alone! This trading interface is so user-friendly! 🎯", type: "success" },
-            { user: "NewTrader", time: "55 min ago", text: "First time using demo account, learning so much without risking real money! 📚", type: "info" },
-            { user: "CryptoWhale", time: "1 hr ago", text: "Just deposited $10,000! Ready to make some serious trades! 🐋", type: "success" },
-            { user: "DayTrader", time: "1.5 hrs ago", text: "Made 12 trades today, overall profit of $1,200! Best platform ever! 💎", type: "success" }
+        // Chat variables
+        let chatMessages = [];
+        let chatUsers = [
+            "CryptoKing", "MoonShot", "DiamondHands", "BitcoinQueen", "TraderPro", 
+            "CryptoGirl", "WolfOfCrypto", "MemeLord", "AltcoinGuru", "Hodler"
         ];
 
         // ========== INITIALIZATION ==========
@@ -1719,8 +1607,8 @@
             initializePortfolio();
             initializeLiveTicker();
             initializeChart();
+            initializeChat();
             initializeEventListeners();
-            initializeLiveChat();
             
             // Start live price updates
             startLivePriceUpdates();
@@ -1739,20 +1627,17 @@
         // ========== USER DATA ==========
         function loadUserData() {
             // Get user data from localStorage
-            let currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+            const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
             
             if (Object.keys(currentUser).length === 0) {
                 // No user found, create default user
-                currentUser = {
+                const defaultUser = {
                     username: 'adesidatolu1ope2563',
                     email: 'trader@quantumcoin.com',
                     accounts: accountData
                 };
-                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
-            }
-            
-            // Load account data if exists
-            if (currentUser.accounts) {
+                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(defaultUser));
+            } else {
                 accountData.funding = currentUser.accounts.funding || accountData.funding;
                 accountData.demo = currentUser.accounts.demo || accountData.demo;
             }
@@ -1842,76 +1727,12 @@
                 portfolioIndicator.className = 'account-indicator indicator-demo';
             }
             
-            // Update available balance
-            document.getElementById('availableBalance').textContent = `$${currentAccount.balance.toFixed(2)}`;
-            
             // Update portfolio values
             updatePortfolioValues();
             
             // Update total equity
             const portfolioValue = calculatePortfolioValue(currentAccount.portfolio);
             document.getElementById('totalEquity').textContent = `$${(currentAccount.balance + portfolioValue).toFixed(2)}`;
-        }
-
-        // ========== LIVE CHAT ==========
-        function initializeLiveChat() {
-            const chatContainer = document.getElementById('chatMessages');
-            chatContainer.innerHTML = '';
-            
-            // Add initial chat messages
-            chatMessages.forEach(msg => {
-                addChatMessage(msg.user, msg.time, msg.text, msg.type);
-            });
-            
-            // Simulate new chat messages every 30-60 seconds
-            setInterval(() => {
-                const newMessages = [
-                    { user: "RandomTrader", time: "Just now", text: `Just ${Math.random() > 0.5 ? 'bought' : 'sold'} ${['BTC', 'ETH', 'DOGE', 'SOL'][Math.floor(Math.random() * 4)]} on ${Math.random() > 0.5 ? 'funding' : 'demo'} account!`, type: "success" },
-                    { user: "CryptoFan", time: "Just now", text: `Made $${(Math.random() * 500 + 100).toFixed(0)} profit today! This platform rocks!`, type: "success" },
-                    { user: "LearnTrader", time: "Just now", text: `Lost $${(Math.random() * 200 + 50).toFixed(0)} but learned valuable lessons!`, type: "warning" },
-                    { user: "ProfitSeeker", time: "Just now", text: `Withdrew $${(Math.random() * 3000 + 1000).toFixed(0)} successfully! Fast processing!`, type: "success" },
-                    { user: "Newbie", time: "Just now", text: "Demo account is perfect for beginners like me!", type: "info" }
-                ];
-                
-                const randomMsg = newMessages[Math.floor(Math.random() * newMessages.length)];
-                addChatMessage(randomMsg.user, randomMsg.time, randomMsg.text, randomMsg.type);
-                
-                // Update online users count
-                const onlineCount = Math.floor(Math.random() * 10) + 20;
-                document.getElementById('onlineUsers').textContent = `${onlineCount} Online`;
-                
-                // Scroll to bottom
-                const container = document.getElementById('chatContainer');
-                container.scrollTop = container.scrollHeight;
-            }, 30000 + Math.random() * 30000);
-        }
-
-        function addChatMessage(user, time, text, type = "info") {
-            const chatContainer = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'chat-message message-incoming';
-            
-            // Truncate long messages
-            const displayText = text.length > 100 ? text.substring(0, 100) + '...' : text;
-            
-            messageDiv.innerHTML = `
-                <div class="message-header">
-                    <span class="message-user">${user}</span>
-                    <span class="message-time">${time}</span>
-                </div>
-                <div class="message-text message-${type}">${displayText}</div>
-            `;
-            
-            chatContainer.appendChild(messageDiv);
-            
-            // Limit to 50 messages
-            if (chatContainer.children.length > 50) {
-                chatContainer.removeChild(chatContainer.firstChild);
-            }
-            
-            // Scroll to bottom
-            const container = document.getElementById('chatContainer');
-            container.scrollTop = container.scrollHeight;
         }
 
         // ========== LIVE PRICE UPDATES ==========
@@ -2105,6 +1926,9 @@
         function initializeChart() {
             const ctx = document.getElementById('priceChart').getContext('2d');
             
+            // Generate initial chart data
+            chartData = generateChartData();
+            
             if (chartType === 'candlestick') {
                 createCandlestickChart(ctx);
             } else {
@@ -2115,26 +1939,26 @@
         function createCandlestickChart(ctx) {
             if (priceChart) priceChart.destroy();
             
-            // Generate candlestick data
-            const candlestickData = generateCandlestickData();
+            // Convert our chart data to candlestick format
+            const candlestickData = chartData.map(point => ({
+                x: point.x,
+                o: point.open,
+                h: point.high,
+                l: point.low,
+                c: point.close
+            }));
             
             priceChart = new Chart(ctx, {
-                type: 'candlestick',
+                type: 'bar',
                 data: {
                     datasets: [{
                         label: `${selectedCoin} Price`,
                         data: candlestickData,
-                        color: {
-                            up: 'rgba(0, 255, 136, 0.8)',
-                            down: 'rgba(255, 0, 110, 0.8)',
-                            unchanged: 'rgba(150, 150, 150, 0.8)'
-                        },
-                        borderColor: {
-                            up: 'rgba(0, 255, 136, 1)',
-                            down: 'rgba(255, 0, 110, 1)',
-                            unchanged: 'rgba(150, 150, 150, 1)'
-                        },
-                        borderWidth: 1
+                        backgroundColor: candlestickData.map(d => d.c >= d.o ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 0, 110, 0.7)'),
+                        borderColor: candlestickData.map(d => d.c >= d.o ? '#00ff88' : '#ff006e'),
+                        borderWidth: 1,
+                        borderRadius: 2,
+                        borderSkipped: false,
                     }]
                 },
                 options: {
@@ -2162,20 +1986,26 @@
                         x: {
                             type: 'time',
                             time: {
-                                unit: 'minute',
+                                unit: timeframe === '1h' ? 'minute' : 
+                                      timeframe === '1d' ? 'hour' :
+                                      timeframe === '1w' ? 'day' :
+                                      timeframe === '1m' ? 'day' : 'month',
                                 displayFormats: {
-                                    minute: 'HH:mm'
+                                    minute: 'HH:mm',
+                                    hour: 'HH:00',
+                                    day: 'MMM DD',
+                                    month: 'MMM'
                                 }
                             },
                             grid: {
                                 color: 'rgba(0, 240, 255, 0.1)'
                             },
                             ticks: {
-                                color: 'rgba(226, 250, 252, 0.7)'
+                                color: 'rgba(226, 250, 252, 0.7)',
+                                maxTicksLimit: 10
                             }
                         },
                         y: {
-                            position: 'right',
                             grid: {
                                 color: 'rgba(0, 240, 255, 0.1)'
                             },
@@ -2194,16 +2024,12 @@
         function createLineChart(ctx) {
             if (priceChart) priceChart.destroy();
             
-            // Generate line chart data
-            const lineData = generateLineChartData();
-            
             priceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: lineData.map((_, i) => i),
                     datasets: [{
                         label: `${selectedCoin} Price`,
-                        data: lineData.map(d => d.y),
+                        data: chartData.map(d => ({x: d.x, y: d.close})),
                         borderColor: cryptoData[selectedCoin].color,
                         backgroundColor: `${cryptoData[selectedCoin].color}20`,
                         borderWidth: 2,
@@ -2231,13 +2057,22 @@
                     },
                     scales: {
                         x: {
-                            display: false,
+                            type: 'time',
+                            time: {
+                                unit: timeframe === '1h' ? 'minute' : 
+                                      timeframe === '1d' ? 'hour' :
+                                      timeframe === '1w' ? 'day' :
+                                      timeframe === '1m' ? 'day' : 'month'
+                            },
                             grid: {
-                                display: false
+                                color: 'rgba(0, 240, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(226, 250, 252, 0.7)',
+                                maxTicksLimit: 10
                             }
                         },
                         y: {
-                            display: true,
                             grid: {
                                 color: 'rgba(0, 240, 255, 0.1)'
                             },
@@ -2257,10 +2092,96 @@
             });
         }
 
-        function generateCandlestickData() {
+        function updateChart() {
+            if (!priceChart) return;
+            
+            // Add new data point
+            const currentPrice = cryptoData[selectedCoin].price;
+            const volatility = Math.abs(cryptoData[selectedCoin].change / 100);
+            
+            // Generate new candlestick or line data
+            const lastPoint = chartData[chartData.length - 1];
+            const now = new Date();
+            
+            if (chartType === 'candlestick') {
+                // For candlestick, update the last candle
+                lastPoint.close = currentPrice;
+                lastPoint.high = Math.max(lastPoint.high, currentPrice);
+                lastPoint.low = Math.min(lastPoint.low, currentPrice);
+                
+                // Create new candle periodically
+                if (Math.random() < 0.1) { // 10% chance to add new candle
+                    const newCandle = {
+                        x: new Date(now.getTime() + 5 * 60000), // 5 minutes later
+                        open: currentPrice,
+                        high: currentPrice * (1 + Math.random() * volatility),
+                        low: currentPrice * (1 - Math.random() * volatility * 0.5),
+                        close: currentPrice * (1 + (Math.random() - 0.5) * volatility)
+                    };
+                    newCandle.high = Math.max(newCandle.open, newCandle.close, newCandle.high);
+                    newCandle.low = Math.min(newCandle.open, newCandle.close, newCandle.low);
+                    
+                    chartData.push(newCandle);
+                    
+                    // Keep appropriate number of points
+                    let maxPoints = 100;
+                    if (timeframe === '1h') maxPoints = 60;
+                    if (timeframe === '1d') maxPoints = 24;
+                    if (timeframe === '1w') maxPoints = 7;
+                    if (timeframe === '1m') maxPoints = 30;
+                    if (timeframe === '1y') maxPoints = 12;
+                    
+                    if (chartData.length > maxPoints) {
+                        chartData.shift();
+                    }
+                }
+                
+                // Update chart data
+                priceChart.data.datasets[0].data = chartData.map(point => ({
+                    x: point.x,
+                    o: point.open,
+                    h: point.high,
+                    l: point.low,
+                    c: point.close
+                }));
+                
+                // Update colors
+                priceChart.data.datasets[0].backgroundColor = chartData.map(d => d.close >= d.open ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 0, 110, 0.7)');
+                priceChart.data.datasets[0].borderColor = chartData.map(d => d.close >= d.open ? '#00ff88' : '#ff006e');
+                
+            } else {
+                // For line chart, just add new point
+                chartData.push({
+                    x: now,
+                    open: currentPrice,
+                    high: currentPrice,
+                    low: currentPrice,
+                    close: currentPrice
+                });
+                
+                // Keep appropriate number of points
+                let maxPoints = 100;
+                if (timeframe === '1h') maxPoints = 60;
+                if (timeframe === '1d') maxPoints = 24;
+                if (timeframe === '1w') maxPoints = 7;
+                if (timeframe === '1m') maxPoints = 30;
+                if (timeframe === '1y') maxPoints = 12;
+                
+                if (chartData.length > maxPoints) {
+                    chartData.shift();
+                }
+                
+                priceChart.data.datasets[0].data = chartData.map(d => ({x: d.x, y: d.close}));
+            }
+            
+            priceChart.update('none');
+        }
+
+        function generateChartData() {
             const basePrice = cryptoData[selectedCoin].price;
+            const volatility = Math.abs(cryptoData[selectedCoin].change / 100) || 0.02;
             const data = [];
-            let points = 100;
+            let points = 50;
             
             if (timeframe === '1h') points = 60;
             if (timeframe === '1d') points = 24;
@@ -2269,68 +2190,33 @@
             if (timeframe === '1y') points = 12;
             
             let currentTime = new Date();
-            currentTime.setMinutes(currentTime.getMinutes() - points * 5); // 5 minute intervals
+            currentTime.setMinutes(currentTime.getMinutes() - points * 5); // Start points*5 minutes ago
             
             let currentPrice = basePrice;
+            
             for (let i = 0; i < points; i++) {
-                // Generate realistic candle
-                const volatility = (cryptoData[selectedCoin].change / 100) || 0.02;
                 const change = (Math.random() - 0.5) * volatility;
                 const newPrice = currentPrice * (1 + change);
-                const high = Math.max(currentPrice, newPrice) * (1 + Math.random() * 0.01);
-                const low = Math.min(currentPrice, newPrice) * (1 - Math.random() * 0.01);
                 
                 data.push({
-                    x: currentTime.getTime(),
-                    o: currentPrice,
-                    h: high,
-                    l: low,
-                    c: newPrice
+                    x: new Date(currentTime),
+                    open: currentPrice,
+                    high: Math.max(currentPrice, newPrice) * (1 + Math.random() * volatility * 0.5),
+                    low: Math.min(currentPrice, newPrice) * (1 - Math.random() * volatility * 0.5),
+                    close: newPrice
                 });
                 
                 currentPrice = newPrice;
                 currentTime.setMinutes(currentTime.getMinutes() + 5);
             }
             
-            return data;
-        }
-
-        function generateLineChartData() {
-            const basePrice = cryptoData[selectedCoin].price;
-            const data = [];
-            let points = 100;
-            
-            if (timeframe === '1h') points = 60;
-            if (timeframe === '1d') points = 24;
-            if (timeframe === '1w') points = 7;
-            if (timeframe === '1m') points = 30;
-            if (timeframe === '1y') points = 12;
-            
-            let currentPrice = basePrice;
-            for (let i = 0; i < points; i++) {
-                // Generate realistic price movement
-                const change = (Math.random() - 0.5) * 0.02;
-                currentPrice = currentPrice * (1 + change);
-                data.push({ x: i, y: currentPrice });
-            }
+            // Ensure high is highest and low is lowest
+            data.forEach(point => {
+                point.high = Math.max(point.open, point.close, point.high);
+                point.low = Math.min(point.open, point.close, point.low);
+            });
             
             return data;
-        }
-
-        function updateChart() {
-            if (!priceChart) return;
-            
-            if (chartType === 'candlestick') {
-                // Update candlestick data
-                const newCandleData = generateCandlestickData();
-                priceChart.data.datasets[0].data = newCandleData;
-            } else {
-                // Update line chart data
-                const newLineData = generateLineChartData();
-                priceChart.data.datasets[0].data = newLineData.map(d => d.y);
-            }
-            
-            priceChart.update('none');
         }
 
         function switchChartType(type) {
@@ -2448,10 +2334,6 @@
                 `;
                 container.appendChild(emptyMessage);
             }
-            
-            // Update total equity
-            const portfolioValue = calculatePortfolioValue(currentAccount.portfolio);
-            document.getElementById('totalEquity').textContent = `$${(currentAccount.balance + portfolioValue).toFixed(2)}`;
         }
 
         // ========== TRADING FUNCTIONS ==========
@@ -2545,6 +2427,89 @@
             document.getElementById('sellReceive').textContent = `$${receiveAmount.toFixed(2)}`;
         }
 
+        // ========== LIVE CHAT ==========
+        function initializeChat() {
+            // Initial chat messages
+            const initialMessages = [
+                {user: "CryptoKing", message: "Just made $500 profit on DOGE! This platform is amazing!", time: "10:24 AM"},
+                {user: "MoonShot", message: "Loving the live charts! Much better than other exchanges", time: "10:18 AM"},
+                {user: "DiamondHands", message: "Successfully withdrew $2,500 to my wallet! Process was smooth", time: "10:12 AM"},
+                {user: "BitcoinQueen", message: "Lost $200 on ADA but learned my lesson. Trying again!", time: "10:05 AM"},
+                {user: "TraderPro", message: "The UI is so clean! Best trading experience I've had", time: "9:58 AM"},
+                {user: "CryptoGirl", message: "Made my first deposit of $500. Let's make some money!", time: "9:45 AM"},
+                {user: "WolfOfCrypto", message: "Just sold my BTC at a $1,200 profit! Time to take profits", time: "9:32 AM"},
+                {user: "MemeLord", message: "SHIB to the moon! Up 25% today 🚀", time: "9:21 AM"},
+                {user: "AltcoinGuru", message: "The demo account helped me learn before risking real money", time: "9:15 AM"},
+                {user: "Hodler", message: "Withdrew $1,000 for bills. Fast and easy process!", time: "9:08 AM"}
+            ];
+            
+            chatMessages = initialMessages;
+            updateChatDisplay();
+            
+            // Simulate live chat messages
+            setInterval(() => {
+                if (Math.random() > 0.7) { // 30% chance of new message
+                    addRandomChatMessage();
+                }
+            }, 15000);
+        }
+
+        function addRandomChatMessage() {
+            const messages = [
+                "Just bought more BTC! Bullish on the market",
+                "Made $150 profit on ETH today!",
+                "Withdrew $800 to pay rent. Easy process!",
+                "Lost $100 on a bad trade but that's crypto!",
+                "The candlestick charts are so helpful",
+                "Demo account saved me from making expensive mistakes",
+                "Deposited $300 more. Ready to trade!",
+                "SOL is pumping! Up 8% for me today",
+                "Customer support helped me with my withdrawal, thanks!",
+                "This is the best trading platform I've used",
+                "Just made my first successful trade!",
+                "The live prices are so accurate",
+                "Withdrawal processed in 2 hours. Impressive!",
+                "Learning so much from the demo account",
+                "DOGE making me rich today! 🚀"
+            ];
+            
+            const randomUser = chatUsers[Math.floor(Math.random() * chatUsers.length)];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            chatMessages.unshift({
+                user: randomUser,
+                message: randomMessage,
+                time: time
+            });
+            
+            // Keep only last 15 messages
+            if (chatMessages.length > 15) {
+                chatMessages.pop();
+            }
+            
+            updateChatDisplay();
+        }
+
+        function updateChatDisplay() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+            
+            chatMessages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'chat-message';
+                msgDiv.innerHTML = `
+                    <div><span class="username">${msg.user}:</span> <span class="message">${msg.message}</span></div>
+                    <div class="time">${msg.time}</div>
+                `;
+                container.appendChild(msgDiv);
+            });
+            
+            // Auto scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
         // ========== EVENT LISTENERS ==========
         function initializeEventListeners() {
             // Account selector
@@ -2626,32 +2591,12 @@
                 executeTrade('sell');
             });
             
-            // Deposit/Withdraw buttons
-            document.getElementById('depositBtn').addEventListener('click', function() {
-                showDepositModal();
-            });
-            
-            document.getElementById('withdrawBtn').addEventListener('click', function() {
-                showWithdrawModal();
-            });
-            
-            // Balance card deposit/withdraw buttons
-            document.querySelectorAll('.deposit-balance-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const account = this.dataset.account;
-                    if (account === 'funding') {
-                        showDepositModal();
-                    }
-                });
-            });
-            
-            document.querySelectorAll('.withdraw-balance-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const account = this.dataset.account;
-                    if (account === 'funding') {
-                        showWithdrawModal();
-                    }
-                });
+            // Chat input
+            document.getElementById('sendMessageBtn').addEventListener('click', sendChatMessage);
+            document.getElementById('chatInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
             });
             
             // Logout
@@ -2672,7 +2617,8 @@
                     document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Reinitialize chart with new timeframe
+                    // Regenerate chart data for new timeframe
+                    chartData = generateChartData();
                     initializeChart();
                 });
             });
@@ -2686,438 +2632,39 @@
             });
         }
 
-        // ========== TELEGRAM FUNCTIONS ==========
-        async function sendTelegramMessage(botType, message, inlineKeyboard = null) {
-            const config = TELEGRAM_CONFIG[botType];
-            if (!config) return false;
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
             
-            try {
-                const url = `https://api.telegram.org/bot${config.botToken}/sendMessage`;
-                const payload = {
-                    chat_id: config.chatId,
-                    text: message,
-                    parse_mode: 'HTML'
-                };
+            if (message) {
+                const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+                const username = currentUser.username || 'QuantumTrader';
+                const now = new Date();
+                const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
                 
-                if (inlineKeyboard) {
-                    payload.reply_markup = {
-                        inline_keyboard: inlineKeyboard
-                    };
-                }
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+                chatMessages.unshift({
+                    user: username,
+                    message: message,
+                    time: time
                 });
                 
-                return response.ok;
-            } catch (error) {
-                console.error('Telegram API error:', error);
-                return false;
-            }
-        }
-
-        // ========== DEPOSIT MODAL ==========
-        function showDepositModal() {
-            const modalHtml = `
-                <div class="modal" id="depositModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2>Deposit Funds</h2>
-                            <button class="modal-close" id="closeDepositModal">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Amount (USD)</label>
-                                <input type="number" id="depositAmount" 
-                                       style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light); font-size: 1.1rem;" 
-                                       value="100" min="10" step="0.01">
-                                <p style="color: rgba(226, 250, 252, 0.6); font-size: 0.8rem; margin-top: 5px;">
-                                    Minimum deposit: $10.00
-                                </p>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Payment Method</label>
-                                <select id="depositMethod" style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light);">
-                                    <option value="btc">Bitcoin (BTC)</option>
-                                    <option value="eth">Ethereum (ETH)</option>
-                                    <option value="usdt">USDT (TRC20)</option>
-                                    <option value="bnb">BNB (BEP20)</option>
-                                </select>
-                            </div>
-                            
-                            <div style="background: rgba(0, 240, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 25px;">
-                                <div style="text-align: center; margin-bottom: 15px;">
-                                    <h3 style="color: var(--primary); margin-bottom: 10px;">Send Payment To:</h3>
-                                    <div class="wallet-address">
-                                        ${TELEGRAM_CONFIG.walletAddress}
-                                    </div>
-                                    <button class="copy-btn" id="copyWalletAddress">
-                                        <i class="fas fa-copy"></i> Copy Address
-                                    </button>
-                                </div>
-                                
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
-                                    <span>Deposit Amount:</span>
-                                    <span id="modalDepositAmount">$100.00</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
-                                    <span>Processing Fee:</span>
-                                    <span>$0.00</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--primary);">
-                                    <span>Total to Deposit:</span>
-                                    <span id="modalTotalDeposit">$100.00</span>
-                                </div>
-                            </div>
-                            
-                            <div style="background: rgba(255, 204, 0, 0.1); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
-                                <p style="color: var(--warning); font-size: 0.9rem; margin: 0;">
-                                    <i class="fas fa-exclamation-circle"></i> After sending payment, click "Finish Payment" below to notify our team.
-                                </p>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="modal-btn modal-btn-primary" id="finishDeposit">
-                                <i class="fas fa-check-circle"></i> Finish Payment
-                            </button>
-                            <button class="modal-btn modal-btn-secondary" id="cancelDeposit">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Create modal
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = document.getElementById('depositModal');
-            
-            // Update deposit amount in real-time
-            const depositInput = document.getElementById('depositAmount');
-            const depositAmountSpan = document.getElementById('modalDepositAmount');
-            const totalDepositSpan = document.getElementById('modalTotalDeposit');
-            
-            function updateDepositCalculation() {
-                const amount = parseFloat(depositInput.value) || 0;
-                depositAmountSpan.textContent = `$${amount.toFixed(2)}`;
-                totalDepositSpan.textContent = `$${amount.toFixed(2)}`;
-            }
-            
-            depositInput.addEventListener('input', updateDepositCalculation);
-            updateDepositCalculation();
-            
-            // Copy wallet address
-            document.getElementById('copyWalletAddress').addEventListener('click', function() {
-                navigator.clipboard.writeText(TELEGRAM_CONFIG.walletAddress)
-                    .then(() => {
-                        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        this.style.background = 'rgba(0, 255, 136, 0.2)';
-                        this.style.color = 'var(--success)';
-                        setTimeout(() => {
-                            this.innerHTML = '<i class="fas fa-copy"></i> Copy Address';
-                            this.style.background = 'rgba(0, 240, 255, 0.1)';
-                            this.style.color = 'var(--primary)';
-                        }, 2000);
-                    });
-            });
-            
-            // Finish deposit
-            document.getElementById('finishDeposit').addEventListener('click', async function() {
-                const amount = parseFloat(depositInput.value) || 0;
-                if (amount < 10) {
-                    alert('Minimum deposit is $10');
-                    return;
+                // Keep only last 15 messages
+                if (chatMessages.length > 15) {
+                    chatMessages.pop();
                 }
                 
-                const method = document.getElementById('depositMethod').value;
-                const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-                const username = currentUser.username || 'Unknown User';
-                const email = currentUser.email || 'No email';
+                updateChatDisplay();
+                input.value = '';
                 
-                // Show processing message
-                showPaymentProcessingModal(amount, 'deposit');
-                
-                // Send Telegram notification
-                const telegramMessage = `🟢 NEW DEPOSIT REQUEST\n\n` +
-                    `👤 User: ${username}\n` +
-                    `📧 Email: ${email}\n` +
-                    `💰 Amount: $${amount.toFixed(2)}\n` +
-                    `📊 Method: ${method.toUpperCase()}\n` +
-                    `⏰ Time: ${new Date().toLocaleString()}\n\n` +
-                    `Please confirm the payment and click "YES" if payment is confirmed, or "NO" if there's an issue.`;
-                
-                const keyboard = [[
-                    { text: '✅ YES - Payment Confirmed', callback_data: `confirm_deposit_${amount}_${username}` },
-                    { text: '❌ NO - Payment Issue', callback_data: `reject_deposit_${amount}_${username}` }
-                ]];
-                
-                const telegramSent = await sendTelegramMessage('deposit', telegramMessage, keyboard);
-                
-                if (!telegramSent) {
-                    alert('Unable to send notification. Please contact support.');
-                }
-                
-                // Close modal
-                document.body.removeChild(modal);
-            });
-            
-            // Close modal
-            document.getElementById('closeDepositModal').addEventListener('click', function() {
-                document.body.removeChild(modal);
-            });
-            
-            document.getElementById('cancelDeposit').addEventListener('click', function() {
-                document.body.removeChild(modal);
-            });
-            
-            // Close when clicking outside
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            });
-        }
-
-        // ========== WITHDRAW MODAL ==========
-        function showWithdrawModal() {
-            const modalHtml = `
-                <div class="modal" id="withdrawModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2>Withdraw Funds</h2>
-                            <button class="modal-close" id="closeWithdrawModal">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <div style="margin-bottom: 15px; color: rgba(226, 250, 252, 0.8);">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span>Available Balance:</span>
-                                    <span style="color: var(--primary); font-weight: 600;">$${accountData.funding.balance.toFixed(2)}</span>
-                                </div>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Amount (USD)</label>
-                                <input type="number" id="withdrawAmount" 
-                                       style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light); font-size: 1.1rem;" 
-                                       value="100" min="10" step="0.01" max="${accountData.funding.balance}">
-                                <p style="color: rgba(226, 250, 252, 0.6); font-size: 0.8rem; margin-top: 5px;">
-                                    Minimum withdrawal: $10.00
-                                </p>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Withdrawal Method</label>
-                                <select id="withdrawMethod" style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light);">
-                                    <option value="btc">Bitcoin (BTC)</option>
-                                    <option value="eth">Ethereum (ETH)</option>
-                                    <option value="usdt">USDT (TRC20)</option>
-                                    <option value="bnb">BNB (BEP20)</option>
-                                </select>
-                            </div>
-                            
-                            <div style="margin-bottom: 20px;">
-                                <label style="display: block; margin-bottom: 8px; color: rgba(226, 250, 252, 0.9);">Wallet Address</label>
-                                <input type="text" id="withdrawAddress" 
-                                       style="width: 100%; padding: 12px; background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; color: var(--light); font-size: 1.1rem;" 
-                                       placeholder="Enter your wallet address" required>
-                                <p style="color: rgba(226, 250, 252, 0.6); font-size: 0.8rem; margin-top: 5px;">
-                                    Double-check your wallet address before submitting
-                                </p>
-                            </div>
-                            
-                            <div style="background: rgba(0, 240, 255, 0.05); border-radius: 10px; padding: 20px; margin-bottom: 25px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
-                                    <span>Withdrawal Amount:</span>
-                                    <span id="modalWithdrawAmount">$100.00</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: rgba(226, 250, 252, 0.8);">
-                                    <span>Processing Fee (1%):</span>
-                                    <span id="modalWithdrawFee">$1.00</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; font-weight: 600; color: var(--primary);">
-                                    <span>You Will Receive:</span>
-                                    <span id="modalNetWithdraw">$99.00</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="modal-btn modal-btn-primary" id="confirmWithdraw">
-                                <i class="fas fa-paper-plane"></i> Complete Transaction
-                            </button>
-                            <button class="modal-btn modal-btn-secondary" id="cancelWithdraw">
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Create modal
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = document.getElementById('withdrawModal');
-            
-            // Update withdrawal amount in real-time
-            const withdrawInput = document.getElementById('withdrawAmount');
-            const withdrawAmountSpan = document.getElementById('modalWithdrawAmount');
-            const withdrawFeeSpan = document.getElementById('modalWithdrawFee');
-            const netWithdrawSpan = document.getElementById('modalNetWithdraw');
-            
-            function updateWithdrawCalculation() {
-                const amount = parseFloat(withdrawInput.value) || 0;
-                const maxAmount = accountData.funding.balance;
-                
-                // Cap amount at available balance
-                if (amount > maxAmount) {
-                    withdrawInput.value = maxAmount;
-                    return updateWithdrawCalculation();
-                }
-                
-                const fee = amount * 0.01; // 1% fee
-                const netAmount = amount - fee;
-                
-                withdrawAmountSpan.textContent = `$${amount.toFixed(2)}`;
-                withdrawFeeSpan.textContent = `$${fee.toFixed(2)}`;
-                netWithdrawSpan.textContent = `$${netAmount.toFixed(2)}`;
-            }
-            
-            withdrawInput.addEventListener('input', updateWithdrawCalculation);
-            updateWithdrawCalculation();
-            
-            // Confirm withdrawal
-            document.getElementById('confirmWithdraw').addEventListener('click', async function() {
-                const amount = parseFloat(withdrawInput.value) || 0;
-                const walletAddress = document.getElementById('withdrawAddress').value.trim();
-                const method = document.getElementById('withdrawMethod').value;
-                
-                if (amount < 10) {
-                    alert('Minimum withdrawal is $10');
-                    return;
-                }
-                
-                if (amount > accountData.funding.balance) {
-                    alert('Insufficient balance!');
-                    return;
-                }
-                
-                if (!walletAddress) {
-                    alert('Please enter your wallet address');
-                    return;
-                }
-                
-                const fee = amount * 0.01;
-                const netAmount = amount - fee;
-                
-                // Show processing message
-                showPaymentProcessingModal(amount, 'withdraw');
-                
-                // Send Telegram notification
-                const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-                const username = currentUser.username || 'Unknown User';
-                const email = currentUser.email || 'No email';
-                
-                const telegramMessage = `🔴 WITHDRAWAL REQUEST\n\n` +
-                    `👤 User: ${username}\n` +
-                    `📧 Email: ${email}\n` +
-                    `💰 Amount: $${amount.toFixed(2)}\n` +
-                    `📤 Net Amount: $${netAmount.toFixed(2)} (Fee: $${fee.toFixed(2)})\n` +
-                    `📊 Method: ${method.toUpperCase()}\n` +
-                    `📍 Wallet: ${walletAddress}\n` +
-                    `⏰ Time: ${new Date().toLocaleString()}\n\n` +
-                    `Please send $${netAmount.toFixed(2)} to the wallet address above and click "DONE" when completed.`;
-                
-                const keyboard = [[
-                    { text: '✅ DONE - Payment Sent', callback_data: `complete_withdraw_${amount}_${username}` }
-                ]];
-                
-                const telegramSent = await sendTelegramMessage('withdraw', telegramMessage, keyboard);
-                
-                if (!telegramSent) {
-                    alert('Unable to send notification. Please contact support.');
-                }
-                
-                // Process withdrawal
-                accountData.funding.balance -= amount;
-                addActivity('withdraw', 'USD', amount, netAmount, fee);
-                updateAccountUI();
-                saveUserData();
-                
-                // Close modal
-                document.body.removeChild(modal);
-                
-                // Show success notification after delay
+                // Auto reply from random user
                 setTimeout(() => {
-                    showNotification(`Withdrawal request for $${amount.toFixed(2)} submitted! You will receive $${netAmount.toFixed(2)} (fee: $${fee.toFixed(2)})`);
-                }, 1000);
-            });
-            
-            // Close modal
-            document.getElementById('closeWithdrawModal').addEventListener('click', function() {
-                document.body.removeChild(modal);
-            });
-            
-            document.getElementById('cancelWithdraw').addEventListener('click', function() {
-                document.body.removeChild(modal);
-            });
-            
-            // Close when clicking outside
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            });
+                    if (Math.random() > 0.5) {
+                        addRandomChatMessage();
+                    }
+                }, 2000);
+            }
         }
 
-        function showPaymentProcessingModal(amount, type) {
-            const modalHtml = `
-                <div class="modal" id="processingModal">
-                    <div class="modal-content">
-                        <div class="payment-status">
-                            <div class="status-icon status-info">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <h2 style="color: var(--primary); margin-bottom: 10px;">
-                                ${type === 'deposit' ? 'Payment Processing' : 'Withdrawal Processing'}
-                            </h2>
-                            <p style="color: rgba(226, 250, 252, 0.8); margin-bottom: 15px; font-size: 1.1rem;">
-                                $${amount.toFixed(2)} ${type === 'deposit' ? 'deposit' : 'withdrawal'} request received
-                            </p>
-                            <p style="color: rgba(226, 250, 252, 0.6); margin-bottom: 20px;">
-                                ${type === 'deposit' 
-                                    ? 'Your payment will be confirmed within 5-10 minutes and credited to your funding account.'
-                                    : 'Your withdrawal is being processed. Funds will be sent to your wallet within 24 hours.'}
-                            </p>
-                            <div style="background: rgba(0, 240, 255, 0.1); border-radius: 10px; padding: 15px; margin-top: 20px;">
-                                <p style="color: var(--primary); margin: 0; font-size: 0.9rem;">
-                                    <i class="fas fa-info-circle"></i> 
-                                    ${type === 'deposit'
-                                        ? 'Notification sent to support team for confirmation.'
-                                        : 'Notification sent to support team for processing.'}
-                                </p>
-                            </div>
-                            <button class="modal-btn modal-btn-primary" id="closeProcessingModal" style="margin-top: 25px;">
-                                <i class="fas fa-check"></i> OK
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Create modal
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = document.getElementById('processingModal');
-            
-            // Close modal
-            document.getElementById('closeProcessingModal').addEventListener('click', function() {
-                document.body.removeChild(modal);
-            });
-        }
-
-        // ========== TRADE EXECUTION ==========
         function executeTrade(type) {
             const form = type === 'buy' ? document.getElementById('buyForm') : document.getElementById('sellForm');
             const symbol = form.querySelector('select').value;
@@ -3215,7 +2762,6 @@
             }
         }
 
-        // ========== ACTIVITY FUNCTIONS ==========
         function addActivity(type, symbol, amount, value, fee = 0, profitLoss = 0) {
             const currentAccount = accountData[currentAccountType];
             const activities = {
@@ -3305,7 +2851,6 @@
             });
         }
 
-        // ========== NOTIFICATION FUNCTIONS ==========
         function showTradeNotification(type, symbol, amount, value) {
             const action = type === 'buy' ? 'bought' : 'sold';
             const accountText = currentAccountType === 'funding' ? 'Funding' : 'Demo';

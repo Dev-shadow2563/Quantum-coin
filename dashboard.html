@@ -6,6 +6,7 @@
     <title>QuantumCoin Dashboard | Live Crypto Trading</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
     <style>
         * {
             margin: 0;
@@ -891,6 +892,19 @@
             margin-right: 5px;
         }
 
+        .chat-message .username-success { 
+            color: var(--success); 
+            font-weight: 600; 
+        }
+        .chat-message .username-warning { 
+            color: var(--warning); 
+            font-weight: 600; 
+        }
+        .chat-message .user-status { 
+            font-size: 0.7rem; 
+            color: rgba(226, 250, 252, 0.5);
+            margin-left: 5px;
+        }
         .chat-message .message {
             color: rgba(226, 250, 252, 0.8);
             word-wrap: break-word;
@@ -925,6 +939,25 @@
             color: var(--darker);
             font-weight: 600;
             cursor: pointer;
+        }
+
+        /* Pending Transactions */
+        .pending-transactions {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(0, 240, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
         }
 
         /* Notification Bell */
@@ -1314,6 +1347,17 @@
                         </div>
                     </div>
 
+                    <!-- Pending Transactions -->
+                    <div class="pending-transactions">
+                        <h3 style="color: var(--primary); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>Recent Transactions</span>
+                            <span class="badge-funding" style="font-size: 0.7rem;">Live</span>
+                        </h3>
+                        <div id="pendingTransactionsList">
+                            <!-- Transactions will load here -->
+                        </div>
+                    </div>
+
                     <!-- Live Price Ticker -->
                     <div class="price-ticker">
                         <div class="ticker-container" id="liveTicker">
@@ -1347,7 +1391,9 @@
                     </div>
                     
                     <div class="trading-chart" id="tradingChart">
-                        <canvas id="priceChart"></canvas>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
                     </div>
                     
                     <h3>Top Cryptocurrencies - Today's Movement</h3>
@@ -1515,14 +1561,16 @@
                 <!-- Live Chat -->
                 <div class="live-chat">
                     <div class="chat-header">
-                        <h2>Live Chat</h2>
-                        <span class="positive" style="font-size: 0.8rem;"><i class="fas fa-users"></i> 124 Online</span>
+                        <h2>Live Trader Chat</h2>
+                        <span class="positive" style="font-size: 0.8rem;">
+                            <i class="fas fa-users"></i> <span id="onlineCount">243</span> Online
+                        </span>
                     </div>
                     <div class="chat-messages" id="chatMessages">
                         <!-- Chat messages will be added here -->
                     </div>
                     <div class="chat-input">
-                        <input type="text" id="chatInput" placeholder="Type your message...">
+                        <input type="text" id="chatInput" placeholder="Share your trading experience...">
                         <button id="sendMessageBtn"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
@@ -1593,9 +1641,24 @@
         // Chat variables
         let chatMessages = [];
         let chatUsers = [
-            "CryptoKing", "MoonShot", "DiamondHands", "BitcoinQueen", "TraderPro", 
-            "CryptoGirl", "WolfOfCrypto", "MemeLord", "AltcoinGuru", "Hodler"
+            { name: "CryptoKing", status: "Pro Trader", balance: "$15,420" },
+            { name: "MoonShot", status: "Meme Coin Expert", balance: "$8,730" },
+            { name: "DiamondHands", status: "Long-term Investor", balance: "$42,150" },
+            { name: "BitcoinQueen", status: "BTC Maximalist", balance: "$120,500" },
+            { name: "TraderPro", status: "Day Trader", balance: "$25,800" },
+            { name: "CryptoGirl", status: "DeFi Enthusiast", balance: "$18,340" },
+            { name: "WolfOfCrypto", status: "Swing Trader", balance: "$67,890" },
+            { name: "MemeLord", status: "DOGE Army", balance: "$5,420" },
+            { name: "AltcoinGuru", status: "Altcoin Hunter", balance: "$33,760" },
+            { name: "Hodler", status: "BTC Hodler", balance: "$89,120" },
+            { name: "QuantumProfit", status: "Just Withdrew", balance: "$2,500" },
+            { name: "CryptoNoob", status: "New Trader", balance: "$1,200" },
+            { name: "ProfitMaker", status: "Successful Today", balance: "$12,450" },
+            { name: "LearnFromLoss", status: "Learning", balance: "$850" }
         ];
+
+        // Telegram Configuration
+        const WALLET_ADDRESS = 'bc1qcl79ftwdhes0kzpcpgyt5t24m59m0vsa35rkhy';
 
         // ========== INITIALIZATION ==========
         document.addEventListener('DOMContentLoaded', function() {
@@ -1612,6 +1675,7 @@
             
             // Start live price updates
             startLivePriceUpdates();
+            startBotActivitySimulation();
             
             // Update initial calculations
             updateBuyCalculation();
@@ -1619,9 +1683,13 @@
             
             // Load initial activities
             loadInitialActivities();
+            loadPendingTransactions();
             
             // Update UI with current account
             updateAccountUI();
+            
+            // Update online count
+            updateOnlineCount();
         });
 
         // ========== USER DATA ==========
@@ -1632,14 +1700,16 @@
             if (Object.keys(currentUser).length === 0) {
                 // No user found, create default user
                 const defaultUser = {
+                    id: 'USER' + Date.now().toString().slice(-6),
                     username: 'adesidatolu1ope2563',
                     email: 'trader@quantumcoin.com',
-                    accounts: accountData
+                    accounts: accountData,
+                    transactions: []
                 };
                 localStorage.setItem('quantumcoin_currentUser', JSON.stringify(defaultUser));
             } else {
-                accountData.funding = currentUser.accounts.funding || accountData.funding;
-                accountData.demo = currentUser.accounts.demo || accountData.demo;
+                accountData.funding = currentUser.accounts?.funding || accountData.funding;
+                accountData.demo = currentUser.accounts?.demo || accountData.demo;
             }
             
             // Update UI with user data
@@ -1729,10 +1799,6 @@
             
             // Update portfolio values
             updatePortfolioValues();
-            
-            // Update total equity
-            const portfolioValue = calculatePortfolioValue(currentAccount.portfolio);
-            document.getElementById('totalEquity').textContent = `$${(currentAccount.balance + portfolioValue).toFixed(2)}`;
         }
 
         // ========== LIVE PRICE UPDATES ==========
@@ -1922,26 +1988,83 @@
             }
         }
 
-        // ========== CHART ==========
+        // ========== CHART FUNCTIONS ==========
+        function generateRealisticChartData() {
+            const basePrice = cryptoData[selectedCoin].price;
+            const volatility = Math.abs(cryptoData[selectedCoin].change / 100) || 0.02;
+            const data = [];
+            let points = 100;
+            
+            if (timeframe === '1h') points = 60;
+            if (timeframe === '1d') points = 24;
+            if (timeframe === '1w') points = 7;
+            if (timeframe === '1m') points = 30;
+            if (timeframe === '1y') points = 12;
+            
+            let currentTime = new Date();
+            // Go back in time based on timeframe
+            switch(timeframe) {
+                case '1h': currentTime.setHours(currentTime.getHours() - 1); break;
+                case '1d': currentTime.setDate(currentTime.getDate() - 1); break;
+                case '1w': currentTime.setDate(currentTime.getDate() - 7); break;
+                case '1m': currentTime.setMonth(currentTime.getMonth() - 1); break;
+                case '1y': currentTime.setFullYear(currentTime.getFullYear() - 1); break;
+            }
+            
+            let currentPrice = basePrice * (1 - volatility * 0.5);
+            
+            for (let i = 0; i < points; i++) {
+                const marketTrend = Math.sin(i * 0.1) * 0.01;
+                const randomWalk = (Math.random() - 0.5) * volatility * 2;
+                const newPrice = currentPrice * (1 + marketTrend + randomWalk);
+                
+                const open = currentPrice;
+                const close = newPrice;
+                const high = Math.max(open, close) * (1 + Math.random() * volatility);
+                const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5);
+                
+                data.push({
+                    x: new Date(currentTime),
+                    open: open,
+                    high: high,
+                    low: low,
+                    close: close
+                });
+                
+                // Move time forward
+                switch(timeframe) {
+                    case '1h': currentTime.setMinutes(currentTime.getMinutes() + 1); break;
+                    case '1d': currentTime.setHours(currentTime.getHours() + 1); break;
+                    case '1w': currentTime.setDate(currentTime.getDate() + 1); break;
+                    case '1m': currentTime.setDate(currentTime.getDate() + 1); break;
+                    case '1y': currentTime.setMonth(currentTime.getMonth() + 1); break;
+                }
+                
+                currentPrice = newPrice;
+            }
+            
+            return data;
+        }
+
         function initializeChart() {
             const ctx = document.getElementById('priceChart').getContext('2d');
-            
-            // Generate initial chart data
-            chartData = generateChartData();
+            chartData = generateRealisticChartData();
             
             if (chartType === 'candlestick') {
                 createCandlestickChart(ctx);
             } else {
                 createLineChart(ctx);
             }
+            
+            // Start live updates
+            setInterval(updateLiveChart, 2000);
         }
 
         function createCandlestickChart(ctx) {
             if (priceChart) priceChart.destroy();
             
-            // Convert our chart data to candlestick format
             const candlestickData = chartData.map(point => ({
-                x: point.x,
+                t: point.x,
                 o: point.open,
                 h: point.high,
                 l: point.low,
@@ -1949,34 +2072,41 @@
             }));
             
             priceChart = new Chart(ctx, {
-                type: 'bar',
+                type: 'candlestick',
                 data: {
                     datasets: [{
                         label: `${selectedCoin} Price`,
                         data: candlestickData,
-                        backgroundColor: candlestickData.map(d => d.c >= d.o ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 0, 110, 0.7)'),
-                        borderColor: candlestickData.map(d => d.c >= d.o ? '#00ff88' : '#ff006e'),
+                        color: {
+                            up: '#00ff88',
+                            down: '#ff006e',
+                            unchanged: '#999999'
+                        },
+                        borderColor: 'rgba(0, 240, 255, 0.5)',
                         borderWidth: 1,
-                        borderRadius: 2,
-                        borderSkipped: false,
+                        backgroundColor: (context) => {
+                            const point = context.dataset.data[context.dataIndex];
+                            return point.c >= point.o 
+                                ? 'rgba(0, 255, 136, 0.7)' 
+                                : 'rgba(255, 0, 110, 0.7)';
+                        }
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     const point = context.raw;
                                     return [
-                                        `Open: $${point.o.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                                        `High: $${point.h.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                                        `Low: $${point.l.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                                        `Close: $${point.c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                        `O: $${point.o.toFixed(2)}`,
+                                        `H: $${point.h.toFixed(2)}`,
+                                        `L: $${point.l.toFixed(2)}`,
+                                        `C: $${point.c.toFixed(2)}`,
+                                        `Change: ${point.c >= point.o ? '+' : ''}${((point.c - point.o) / point.o * 100).toFixed(2)}%`
                                     ];
                                 }
                             }
@@ -1989,31 +2119,17 @@
                                 unit: timeframe === '1h' ? 'minute' : 
                                       timeframe === '1d' ? 'hour' :
                                       timeframe === '1w' ? 'day' :
-                                      timeframe === '1m' ? 'day' : 'month',
-                                displayFormats: {
-                                    minute: 'HH:mm',
-                                    hour: 'HH:00',
-                                    day: 'MMM DD',
-                                    month: 'MMM'
-                                }
+                                      timeframe === '1m' ? 'day' : 'month'
                             },
-                            grid: {
-                                color: 'rgba(0, 240, 255, 0.1)'
-                            },
-                            ticks: {
-                                color: 'rgba(226, 250, 252, 0.7)',
-                                maxTicksLimit: 10
-                            }
+                            grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                            ticks: { color: 'rgba(226, 250, 252, 0.7)' }
                         },
                         y: {
-                            grid: {
-                                color: 'rgba(0, 240, 255, 0.1)'
-                            },
-                            ticks: {
+                            position: 'right',
+                            grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                            ticks: { 
                                 color: 'rgba(226, 250, 252, 0.7)',
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-                                }
+                                callback: value => '$' + value.toLocaleString()
                             }
                         }
                     }
@@ -2092,131 +2208,54 @@
             });
         }
 
-        function updateChart() {
-            if (!priceChart) return;
+        function updateLiveChart() {
+            if (!priceChart || chartData.length === 0) return;
             
-            // Add new data point
-            const currentPrice = cryptoData[selectedCoin].price;
-            const volatility = Math.abs(cryptoData[selectedCoin].change / 100);
-            
-            // Generate new candlestick or line data
             const lastPoint = chartData[chartData.length - 1];
-            const now = new Date();
+            const currentPrice = cryptoData[selectedCoin].price;
+            const volatility = Math.abs(cryptoData[selectedCoin].change / 100) || 0.02;
             
-            if (chartType === 'candlestick') {
-                // For candlestick, update the last candle
-                lastPoint.close = currentPrice;
-                lastPoint.high = Math.max(lastPoint.high, currentPrice);
-                lastPoint.low = Math.min(lastPoint.low, currentPrice);
+            // Update last candle
+            const now = new Date();
+            lastPoint.close = currentPrice;
+            lastPoint.high = Math.max(lastPoint.high, currentPrice);
+            lastPoint.low = Math.min(lastPoint.low, currentPrice);
+            
+            // Add new point periodically
+            if (Math.random() < 0.2) {
+                const timeStep = {
+                    '1h': 1,
+                    '1d': 1,
+                    '1w': 1,
+                    '1m': 1,
+                    '1y': 1
+                }[timeframe];
                 
-                // Create new candle periodically
-                if (Math.random() < 0.1) { // 10% chance to add new candle
-                    const newCandle = {
-                        x: new Date(now.getTime() + 5 * 60000), // 5 minutes later
-                        open: currentPrice,
-                        high: currentPrice * (1 + Math.random() * volatility),
-                        low: currentPrice * (1 - Math.random() * volatility * 0.5),
-                        close: currentPrice * (1 + (Math.random() - 0.5) * volatility)
-                    };
-                    newCandle.high = Math.max(newCandle.open, newCandle.close, newCandle.high);
-                    newCandle.low = Math.min(newCandle.open, newCandle.close, newCandle.low);
-                    
-                    chartData.push(newCandle);
-                    
-                    // Keep appropriate number of points
-                    let maxPoints = 100;
-                    if (timeframe === '1h') maxPoints = 60;
-                    if (timeframe === '1d') maxPoints = 24;
-                    if (timeframe === '1w') maxPoints = 7;
-                    if (timeframe === '1m') maxPoints = 30;
-                    if (timeframe === '1y') maxPoints = 12;
-                    
-                    if (chartData.length > maxPoints) {
-                        chartData.shift();
-                    }
-                }
+                const newTime = new Date(lastPoint.x);
+                if (timeframe === '1h') newTime.setMinutes(newTime.getMinutes() + timeStep);
+                if (timeframe === '1d') newTime.setHours(newTime.getHours() + timeStep);
+                if (['1w', '1m'].includes(timeframe)) newTime.setDate(newTime.getDate() + timeStep);
+                if (timeframe === '1y') newTime.setMonth(newTime.getMonth() + timeStep);
                 
-                // Update chart data
-                priceChart.data.datasets[0].data = chartData.map(point => ({
-                    x: point.x,
-                    o: point.open,
-                    h: point.high,
-                    l: point.low,
-                    c: point.close
-                }));
+                const newCandle = {
+                    x: newTime,
+                    open: lastPoint.close,
+                    close: currentPrice * (1 + (Math.random() - 0.5) * volatility),
+                    high: Math.max(lastPoint.close, currentPrice) * (1 + Math.random() * volatility * 0.5),
+                    low: Math.min(lastPoint.close, currentPrice) * (1 - Math.random() * volatility * 0.5)
+                };
                 
-                // Update colors
-                priceChart.data.datasets[0].backgroundColor = chartData.map(d => d.close >= d.open ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 0, 110, 0.7)');
-                priceChart.data.datasets[0].borderColor = chartData.map(d => d.close >= d.open ? '#00ff88' : '#ff006e');
-                
-            } else {
-                // For line chart, just add new point
-                chartData.push({
-                    x: now,
-                    open: currentPrice,
-                    high: currentPrice,
-                    low: currentPrice,
-                    close: currentPrice
-                });
+                chartData.push(newCandle);
                 
                 // Keep appropriate number of points
-                let maxPoints = 100;
-                if (timeframe === '1h') maxPoints = 60;
-                if (timeframe === '1d') maxPoints = 24;
-                if (timeframe === '1w') maxPoints = 7;
-                if (timeframe === '1m') maxPoints = 30;
-                if (timeframe === '1y') maxPoints = 12;
+                let maxPoints = {
+                    '1h': 60, '1d': 24, '1w': 7, '1m': 30, '1y': 12
+                }[timeframe] || 50;
                 
-                if (chartData.length > maxPoints) {
-                    chartData.shift();
-                }
-                
-                priceChart.data.datasets[0].data = chartData.map(d => ({x: d.x, y: d.close}));
+                if (chartData.length > maxPoints) chartData.shift();
             }
             
             priceChart.update('none');
-        }
-
-        function generateChartData() {
-            const basePrice = cryptoData[selectedCoin].price;
-            const volatility = Math.abs(cryptoData[selectedCoin].change / 100) || 0.02;
-            const data = [];
-            let points = 50;
-            
-            if (timeframe === '1h') points = 60;
-            if (timeframe === '1d') points = 24;
-            if (timeframe === '1w') points = 7;
-            if (timeframe === '1m') points = 30;
-            if (timeframe === '1y') points = 12;
-            
-            let currentTime = new Date();
-            currentTime.setMinutes(currentTime.getMinutes() - points * 5); // Start points*5 minutes ago
-            
-            let currentPrice = basePrice;
-            
-            for (let i = 0; i < points; i++) {
-                const change = (Math.random() - 0.5) * volatility;
-                const newPrice = currentPrice * (1 + change);
-                
-                data.push({
-                    x: new Date(currentTime),
-                    open: currentPrice,
-                    high: Math.max(currentPrice, newPrice) * (1 + Math.random() * volatility * 0.5),
-                    low: Math.min(currentPrice, newPrice) * (1 - Math.random() * volatility * 0.5),
-                    close: newPrice
-                });
-                
-                currentPrice = newPrice;
-                currentTime.setMinutes(currentTime.getMinutes() + 5);
-            }
-            
-            // Ensure high is highest and low is lowest
-            data.forEach(point => {
-                point.high = Math.max(point.open, point.close, point.high);
-                point.low = Math.min(point.open, point.close, point.low);
-            });
-            
-            return data;
         }
 
         function switchChartType(type) {
@@ -2234,18 +2273,6 @@
         // ========== PORTFOLIO ==========
         function initializePortfolio() {
             updatePortfolioDisplay();
-        }
-
-        function calculatePortfolioValue(portfolio) {
-            let totalValue = 0;
-            
-            for (const [coin, holdings] of Object.entries(portfolio)) {
-                if (cryptoData[coin]) {
-                    totalValue += holdings.amount * cryptoData[coin].price;
-                }
-            }
-            
-            return totalValue;
         }
 
         function updatePortfolioValues() {
@@ -2429,59 +2456,106 @@
 
         // ========== LIVE CHAT ==========
         function initializeChat() {
-            // Initial chat messages
+            // Initial realistic chat messages
             const initialMessages = [
-                {user: "CryptoKing", message: "Just made $500 profit on DOGE! This platform is amazing!", time: "10:24 AM"},
-                {user: "MoonShot", message: "Loving the live charts! Much better than other exchanges", time: "10:18 AM"},
-                {user: "DiamondHands", message: "Successfully withdrew $2,500 to my wallet! Process was smooth", time: "10:12 AM"},
-                {user: "BitcoinQueen", message: "Lost $200 on ADA but learned my lesson. Trying again!", time: "10:05 AM"},
-                {user: "TraderPro", message: "The UI is so clean! Best trading experience I've had", time: "9:58 AM"},
-                {user: "CryptoGirl", message: "Made my first deposit of $500. Let's make some money!", time: "9:45 AM"},
-                {user: "WolfOfCrypto", message: "Just sold my BTC at a $1,200 profit! Time to take profits", time: "9:32 AM"},
-                {user: "MemeLord", message: "SHIB to the moon! Up 25% today 🚀", time: "9:21 AM"},
-                {user: "AltcoinGuru", message: "The demo account helped me learn before risking real money", time: "9:15 AM"},
-                {user: "Hodler", message: "Withdrew $1,000 for bills. Fast and easy process!", time: "9:08 AM"}
+                {user: "QuantumProfit", message: "Just withdrew $2,500 to my bank! Withdrawal took only 2 hours ⚡", time: "10:30 AM", status: "Just Withdrew"},
+                {user: "CryptoKing", message: "Made $1,200 profit on SHIB today! This platform is amazing for day trading", time: "10:25 AM", status: "Pro Trader"},
+                {user: "MoonShot", message: "The live candlestick charts helped me spot the perfect entry point", time: "10:20 AM", status: "Meme Coin Expert"},
+                {user: "DiamondHands", message: "Been holding BTC since $30k. Up 40% now! HODLing pays off 💎", time: "10:15 AM", status: "Long-term Investor"},
+                {user: "BitcoinQueen", message: "Lost $300 on a bad ADA trade but made it back with SOL. Lesson learned!", time: "10:10 AM", status: "BTC Maximalist"},
+                {user: "TraderPro", message: "Demo account saved me from losing real money. Great learning tool!", time: "10:05 AM", status: "Day Trader"},
+                {user: "CryptoGirl", message: "Customer support helped me with my first deposit. Very responsive!", time: "10:00 AM", status: "DeFi Enthusiast"},
+                {user: "WolfOfCrypto", message: "Just made my biggest withdrawal yet - $5,000! Process was smooth", time: "9:55 AM", status: "Swing Trader"},
+                {user: "MemeLord", message: "DOGE to $1! Up 15% today 🚀 Perfect for quick profits", time: "9:50 AM", status: "DOGE Army"},
+                {user: "AltcoinGuru", message: "MATIC making moves today! Up 8% in my portfolio", time: "9:45 AM", status: "Altcoin Hunter"},
+                {user: "Hodler", message: "Withdrew profits for the 3rd time this month. Always reliable", time: "9:40 AM", status: "BTC Hodler"},
+                {user: "CryptoNoob", message: "First time trading crypto. Started with $100, already up to $130!", time: "9:35 AM", status: "New Trader"},
+                {user: "ProfitMaker", message: "ETH 2.0 staking through this platform is earning me passive income", time: "9:30 AM", status: "Successful Today"},
+                {user: "LearnFromLoss", message: "Lost $150 yesterday but recovered today. Never give up!", time: "9:25 AM", status: "Learning"}
             ];
             
             chatMessages = initialMessages;
             updateChatDisplay();
             
-            // Simulate live chat messages
+            // Simulate live chat messages (every 10-20 seconds)
             setInterval(() => {
-                if (Math.random() > 0.7) { // 30% chance of new message
-                    addRandomChatMessage();
+                if (Math.random() > 0.3) { // 70% chance of new message
+                    addRealisticChatMessage();
                 }
+                
+                // Update online count randomly
+                updateOnlineCount();
             }, 15000);
         }
 
-        function addRandomChatMessage() {
+        function addRealisticChatMessage() {
             const messages = [
-                "Just bought more BTC! Bullish on the market",
-                "Made $150 profit on ETH today!",
-                "Withdrew $800 to pay rent. Easy process!",
-                "Lost $100 on a bad trade but that's crypto!",
-                "The candlestick charts are so helpful",
-                "Demo account saved me from making expensive mistakes",
-                "Deposited $300 more. Ready to trade!",
-                "SOL is pumping! Up 8% for me today",
-                "Customer support helped me with my withdrawal, thanks!",
-                "This is the best trading platform I've used",
-                "Just made my first successful trade!",
-                "The live prices are so accurate",
-                "Withdrawal processed in 2 hours. Impressive!",
-                "Learning so much from the demo account",
-                "DOGE making me rich today! 🚀"
+                "Just withdrew $500 for bills. Fast and easy!",
+                "Made $350 profit on BTC today! Buying the dip worked",
+                "Deposited another $1k. Ready for the next bull run",
+                "Lost $200 on XRP but it's all part of learning",
+                "The chart tools on this platform are superior to Binance",
+                "Withdrawal processed in 1 hour. Impressed!",
+                "Demo trading taught me risk management before using real money",
+                "Just hit $10k profit milestone this month! 🎉",
+                "ADA staking rewards are being added automatically. Love it!",
+                "Customer service responded in 5 minutes. Best support ever!",
+                "Portfolio up 15% this week thanks to SOL and MATIC",
+                "Learning to read candlestick patterns from the tutorial section",
+                "Set up limit orders. Now trading while I sleep!",
+                "Referred my friend. We both got bonus funds!",
+                "Mobile app is smooth. Trading on the go is convenient",
+                "Just took profits on ETH at $2,400. Perfect timing!",
+                "Stop-loss saved me from bigger losses. Essential tool!",
+                "Compounding my profits instead of withdrawing. Let it grow!",
+                "The market analysis section is spot on. Helped my decisions",
+                "Starting small with $100, building up slowly and safely"
+            ];
+            
+            const withdrawalMessages = [
+                "Just withdrew $2,500 for my vacation! 🏖️",
+                "Withdrawal of $1,800 hit my bank in 3 hours",
+                "Cashed out $3,200 profits. Time to enjoy!",
+                "Withdrew $750 for new laptop. Crypto pays for tech!",
+                "First withdrawal of $500 worked perfectly",
+                "Large withdrawal of $5k processed overnight. Trustworthy!",
+                "Withdrew profits to pay off credit card debt. Life changing!",
+                "Small withdrawal of $200 for dinner celebration 🎊",
+                "Withdrew $1,500 for rent. Reliable every month",
+                "Emergency withdrawal of $1k processed quickly. Thank you!"
+            ];
+            
+            const lossMessages = [
+                "Lost $150 on a bad trade. Need to study more!",
+                "Down $300 today but market will recover",
+                "Paper hands sold too early. Missed 20% gain",
+                "FOMO bought at the top. Learning patience",
+                "Stop loss triggered. Saved me from bigger loss",
+                "Wrong leverage choice cost me $200. Being careful now",
+                "Emotional trading lost me $450. Back to strategy",
+                "Meme coin gamble didn't pay off. -$180",
+                "Missed my profit target. Greed got me. -$250",
+                "New strategy test failed. -$100 but learned"
             ];
             
             const randomUser = chatUsers[Math.floor(Math.random() * chatUsers.length)];
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            // Mix of message types: 40% regular, 30% withdrawal, 30% loss
+            let messagePool;
+            const rand = Math.random();
+            if (rand < 0.4) messagePool = messages;
+            else if (rand < 0.7) messagePool = withdrawalMessages;
+            else messagePool = lossMessages;
+            
+            const randomMessage = messagePool[Math.floor(Math.random() * messagePool.length)];
             const now = new Date();
             const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             
             chatMessages.unshift({
-                user: randomUser,
-                message: randomMessage,
-                time: time
+                user: randomUser.name,
+                message: randomMessage + (randomUser.balance ? ` (Balance: ${randomUser.balance})` : ''),
+                time: time,
+                status: randomUser.status
             });
             
             // Keep only last 15 messages
@@ -2499,8 +2573,21 @@
             chatMessages.forEach(msg => {
                 const msgDiv = document.createElement('div');
                 msgDiv.className = 'chat-message';
+                
+                // Color code by message type
+                let userClass = 'username';
+                if (msg.message.includes('withdrew') || msg.message.includes('Withdrawal')) {
+                    userClass = 'username-success';
+                } else if (msg.message.includes('Lost') || msg.message.includes('lost')) {
+                    userClass = 'username-warning';
+                }
+                
                 msgDiv.innerHTML = `
-                    <div><span class="username">${msg.user}:</span> <span class="message">${msg.message}</span></div>
+                    <div>
+                        <span class="${userClass}">${msg.user}</span>
+                        ${msg.status ? `<span class="user-status">(${msg.status})</span>` : ''}
+                        <span class="message">${msg.message}</span>
+                    </div>
                     <div class="time">${msg.time}</div>
                 `;
                 container.appendChild(msgDiv);
@@ -2508,6 +2595,16 @@
             
             // Auto scroll to bottom
             container.scrollTop = container.scrollHeight;
+        }
+
+        function updateOnlineCount() {
+            const onlineCount = document.getElementById('onlineCount');
+            if (!onlineCount) return;
+            
+            const currentCount = parseInt(onlineCount.textContent);
+            const change = Math.floor(Math.random() * 10) - 3;
+            const newCount = Math.max(100, Math.min(500, currentCount + change));
+            onlineCount.textContent = newCount;
         }
 
         // ========== EVENT LISTENERS ==========
@@ -2618,7 +2715,7 @@
                     this.classList.add('active');
                     
                     // Regenerate chart data for new timeframe
-                    chartData = generateChartData();
+                    chartData = generateRealisticChartData();
                     initializeChart();
                 });
             });
@@ -2645,7 +2742,8 @@
                 chatMessages.unshift({
                     user: username,
                     message: message,
-                    time: time
+                    time: time,
+                    status: 'You'
                 });
                 
                 // Keep only last 15 messages
@@ -2659,7 +2757,7 @@
                 // Auto reply from random user
                 setTimeout(() => {
                     if (Math.random() > 0.5) {
-                        addRandomChatMessage();
+                        addRealisticChatMessage();
                     }
                 }, 2000);
             }
@@ -2709,7 +2807,8 @@
                 addActivity('buy', symbol, coinAmount, totalCost, feeAmount);
                 
                 // Show success message
-                showTradeNotification('buy', symbol, coinAmount, totalCost);
+                showEnhancedNotification('success', 'Trade Executed', 
+                    `Bought ${formatAmount(coinAmount, symbol)} ${symbol} for $${totalCost.toFixed(2)}`);
                 
             } else { // sell
                 const coinAmount = amount;
@@ -2743,7 +2842,8 @@
                 addActivity('sell', symbol, coinAmount, receiveAmount, feeAmount, profitLoss);
                 
                 // Show success message
-                showTradeNotification('sell', symbol, coinAmount, receiveAmount);
+                showEnhancedNotification('success', 'Trade Executed', 
+                    `Sold ${formatAmount(coinAmount, symbol)} ${symbol} for $${receiveAmount.toFixed(2)}`);
             }
             
             // Save user data
@@ -2751,6 +2851,7 @@
             
             // Update UI
             updatePortfolioValues();
+            updateAccountUI();
             
             // Reset forms
             if (type === 'buy') {
@@ -2851,15 +2952,137 @@
             });
         }
 
-        function showTradeNotification(type, symbol, amount, value) {
-            const action = type === 'buy' ? 'bought' : 'sold';
-            const accountText = currentAccountType === 'funding' ? 'Funding' : 'Demo';
-            const message = `Successfully ${action} ${formatAmount(amount, symbol)} ${symbol} for $${value.toFixed(2)} (${accountText} Account)`;
-            showNotification(message);
+        function loadPendingTransactions() {
+            const container = document.getElementById('pendingTransactionsList');
+            if (!container) return;
+            
+            // Get pending transactions from localStorage
+            const pendingDeposits = JSON.parse(localStorage.getItem('pending_deposits') || '[]');
+            const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
+            
+            // Combine and sort by timestamp
+            const allTransactions = [...pendingDeposits, ...pendingWithdrawals]
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .slice(0, 5); // Show last 5
+            
+            if (allTransactions.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: rgba(226, 250, 252, 0.5); padding: 20px;">No recent transactions</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            allTransactions.forEach(transaction => {
+                const isDeposit = 'walletAddress' in transaction && transaction.walletAddress === WALLET_ADDRESS;
+                const isCompleted = transaction.status === 'confirmed' || transaction.status === 'completed' || transaction.status === 'completed';
+                
+                const transactionDiv = document.createElement('div');
+                transactionDiv.className = 'transaction-item';
+                transactionDiv.style.cssText = `
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px;
+                    background: rgba(0, 240, 255, 0.05);
+                    border-radius: 10px;
+                    margin-bottom: 10px;
+                    border-left: 3px solid ${isDeposit ? 'var(--success)' : 'var(--warning)'};
+                `;
+                
+                const time = new Date(transaction.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                transactionDiv.innerHTML = `
+                    <div>
+                        <div style="font-weight: 600; color: ${isDeposit ? 'var(--success)' : 'var(--warning)'};">
+                            ${isDeposit ? '⬇ Deposit' : '⬆ Withdrawal'}
+                        </div>
+                        <div style="font-size: 0.8rem; color: rgba(226, 250, 252, 0.6);">
+                            ${time} | ${transaction.status}
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 700; color: var(--light);">
+                            $${transaction.amount.toFixed(2)}
+                        </div>
+                        <div style="font-size: 0.8rem; color: ${isCompleted ? 'var(--success)' : 'var(--warning)'};">
+                            ${isCompleted ? '✅ Completed' : '⏳ Processing'}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(transactionDiv);
+            });
         }
 
-        function showNotification(message) {
-            // Create notification element
+        // ========== BOT SIMULATION ==========
+        function startBotActivitySimulation() {
+            // Simulate deposit confirmations
+            setInterval(() => {
+                const pendingDeposits = JSON.parse(localStorage.getItem('pending_deposits') || '[]');
+                const pendingDeposit = pendingDeposits.find(d => d.status === 'pending');
+                
+                if (pendingDeposit && Math.random() > 0.7) {
+                    // Simulate bot confirming deposit
+                    pendingDeposit.status = 'confirmed';
+                    pendingDeposit.confirmationTime = new Date().toISOString();
+                    localStorage.setItem('pending_deposits', JSON.stringify(pendingDeposits));
+                    
+                    // Update user balance
+                    const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+                    if (currentUser.accounts && currentUser.accounts.funding) {
+                        // Add bonus for large deposits
+                        let bonus = 0;
+                        if (pendingDeposit.amount >= 1000) {
+                            bonus = pendingDeposit.amount * 0.05;
+                            pendingDeposit.bonus = bonus;
+                        }
+                        
+                        const totalAmount = pendingDeposit.amount + bonus;
+                        currentUser.accounts.funding.balance += totalAmount;
+                        
+                        // Add transaction record
+                        if (!currentUser.transactions) currentUser.transactions = [];
+                        currentUser.transactions.push({
+                            type: 'deposit_confirmed',
+                            id: pendingDeposit.id,
+                            amount: totalAmount,
+                            bonus: bonus,
+                            status: 'completed',
+                            timestamp: new Date().toISOString()
+                        });
+                        
+                        localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+                        
+                        // Show notification
+                        showEnhancedNotification('deposit', 'Deposit Confirmed',
+                            `$${pendingDeposit.amount.toFixed(2)} deposit confirmed! $${bonus.toFixed(2)} bonus added.`);
+                    }
+                }
+            }, 15000);
+            
+            // Simulate withdrawal completions
+            setInterval(() => {
+                const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
+                const pendingWithdrawal = pendingWithdrawals.find(w => w.status === 'processing');
+                
+                if (pendingWithdrawal && Math.random() > 0.8) {
+                    // Simulate bot completing withdrawal
+                    pendingWithdrawal.status = 'completed';
+                    pendingWithdrawal.completionTime = new Date().toISOString();
+                    localStorage.setItem('pending_withdrawals', JSON.stringify(pendingWithdrawals));
+                    
+                    // Show notification
+                    showEnhancedNotification('withdraw', 'Withdrawal Completed',
+                        `$${pendingWithdrawal.amount.toFixed(2)} sent to your ${pendingWithdrawal.network} wallet.`);
+                }
+            }, 20000);
+            
+            // Refresh transaction list
+            setInterval(loadPendingTransactions, 5000);
+        }
+
+        // ========== NOTIFICATION SYSTEM ==========
+        function showEnhancedNotification(type, title, message, duration = 5000) {
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
@@ -2870,23 +3093,63 @@
                 padding: 15px 20px;
                 border-radius: 10px;
                 border: 1px solid rgba(0, 240, 255, 0.3);
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-                z-index: 1000;
-                max-width: 300px;
+                box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+                z-index: 10000;
+                max-width: 350px;
                 animation: slideIn 0.3s ease;
                 backdrop-filter: blur(10px);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             `;
             
+            const icons = {
+                success: 'fa-check-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle',
+                deposit: 'fa-arrow-down',
+                withdraw: 'fa-arrow-up'
+            };
+            
+            const colors = {
+                success: 'var(--success)',
+                warning: 'var(--warning)',
+                info: 'var(--primary)',
+                deposit: 'var(--success)',
+                withdraw: 'var(--warning)'
+            };
+            
+            const icon = icons[type] || 'fa-bell';
+            const color = colors[type] || 'var(--primary)';
+            
             notification.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-check-circle" style="color: var(--success);"></i>
-                    <span>${message}</span>
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 50%;
+                        background: ${color}20;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        color: ${color};
+                        font-size: 1.2rem;
+                    ">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 700; color: ${color}; margin-bottom: 5px; font-size: 1rem;">
+                            ${title}
+                        </div>
+                        <div style="color: rgba(226, 250, 252, 0.8); font-size: 0.9rem; line-height: 1.4;">
+                            ${message}
+                        </div>
+                    </div>
                 </div>
             `;
             
             document.body.appendChild(notification);
             
-            // Remove after 3 seconds
+            // Auto remove after duration
             setTimeout(() => {
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => {
@@ -2894,7 +3157,7 @@
                         document.body.removeChild(notification);
                     }
                 }, 300);
-            }, 3000);
+            }, duration);
         }
 
         function showNotifications() {
@@ -2997,6 +3260,11 @@
                 0% { background-color: transparent; }
                 50% { background-color: rgba(255, 0, 110, 0.1); }
                 100% { background-color: transparent; }
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
             }
         `;
         document.head.appendChild(style);

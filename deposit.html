@@ -396,6 +396,7 @@
             align-items: center;
             z-index: 2000;
             backdrop-filter: blur(10px);
+            animation: fadeIn 0.3s ease;
         }
 
         .modal-content {
@@ -541,7 +542,7 @@
             <div class="balance-card">
                 <h3>Current Funding Account Balance</h3>
                 <div class="amount" id="currentBalance">$3,506.83</div>
-                <div class="subtext">Minimum deposit: $10.00</div>
+                <div class="subtext">Minimum deposit: $10.00 | Bonus: 5% for deposits over $1,000</div>
             </div>
 
             <!-- Deposit Form -->
@@ -595,8 +596,12 @@
                         <span>Processing Fee:</span>
                         <span>$0.00</span>
                     </div>
+                    <div class="summary-row">
+                        <span>Bonus (5%):</span>
+                        <span id="summaryBonus">$0.00</span>
+                    </div>
                     <div class="summary-row total">
-                        <span>Total to Send:</span>
+                        <span>Total to Receive:</span>
                         <span id="summaryTotal">$500.00</span>
                     </div>
                 </div>
@@ -623,6 +628,7 @@
                     <li>Click "Confirm & Send Payment" to notify our team</li>
                     <li>Your payment will be confirmed within 5-10 minutes</li>
                     <li>Funds will be credited to your funding account after confirmation</li>
+                    <li>Get 5% bonus on deposits over $1,000!</li>
                 </ol>
                 <p style="margin-top: 15px; color: var(--warning); font-weight: 600;">
                     <i class="fas fa-exclamation-triangle"></i> Important: Send only BTC to this address. Other cryptocurrencies will be lost!
@@ -660,6 +666,7 @@
         const depositAmountInput = document.getElementById('depositAmount');
         const amountPresets = document.querySelectorAll('.amount-preset');
         const summaryAmount = document.getElementById('summaryAmount');
+        const summaryBonus = document.getElementById('summaryBonus');
         const summaryTotal = document.getElementById('summaryTotal');
         const copyAddressBtn = document.getElementById('copyAddressBtn');
         const walletAddress = document.getElementById('walletAddress');
@@ -759,9 +766,12 @@
         function updateSummary() {
             const amount = parseFloat(depositAmountInput.value) || 0;
             const formattedAmount = amount.toFixed(2);
+            const bonus = amount >= 1000 ? amount * 0.05 : 0;
+            const total = amount + bonus;
             
             summaryAmount.textContent = `$${formattedAmount}`;
-            summaryTotal.textContent = `$${formattedAmount}`;
+            summaryBonus.textContent = `$${bonus.toFixed(2)}`;
+            summaryTotal.textContent = `$${total.toFixed(2)}`;
         }
 
         async function processDeposit() {
@@ -784,88 +794,175 @@
             const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
             const username = currentUser.username || 'Unknown User';
             const email = currentUser.email || 'No email provided';
+            const userId = currentUser.id || Date.now().toString();
+            
+            // Calculate bonus
+            const bonus = amount >= 1000 ? amount * 0.05 : 0;
+            const totalToReceive = amount + bonus;
             
             // Show confirmation modal
-            modalMessage.innerHTML = `Your payment request for <strong>$${amount.toFixed(2)}</strong> has been submitted to our team.<br><br>
-            Please wait 5-10 minutes for confirmation. You will receive a notification once your payment is confirmed and the funds are added to your account.`;
+            modalMessage.innerHTML = `
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <strong>Deposit Summary:</strong><br>
+                    • Amount: $${amount.toFixed(2)}<br>
+                    • Bonus (5%): $${bonus.toFixed(2)}<br>
+                    • Total to Receive: $${totalToReceive.toFixed(2)}<br>
+                    • Wallet: ${WALLET_ADDRESS}<br>
+                    • Status: <span style="color: var(--warning);">Pending Confirmation</span><br>
+                    • Time: ${new Date().toLocaleTimeString()}
+                </div>
+                <p>Your deposit request has been sent to our team.<br>
+                Please send $${amount.toFixed(2)} in BTC to the address above.<br>
+                You will receive a confirmation within 5-10 minutes.</p>
+            `;
             confirmationModal.style.display = 'flex';
             
             try {
-                // Send notification to Telegram
-                await sendTelegramNotification(amount, username, email);
+                // Send enhanced notification to Telegram bot
+                await sendEnhancedDepositNotification(amount, username, email, userId, bonus);
                 
-                // Store pending deposit
+                // Store pending deposit with enhanced tracking
                 const pendingDeposits = JSON.parse(localStorage.getItem('pending_deposits') || '[]');
                 const depositId = 'DEP' + Date.now() + Math.random().toString(36).substr(2, 9);
                 
-                pendingDeposits.push({
+                const depositRecord = {
                     id: depositId,
                     amount: amount,
+                    bonus: bonus,
+                    totalToReceive: totalToReceive,
                     username: username,
                     email: email,
+                    userId: userId,
+                    walletAddress: WALLET_ADDRESS,
                     timestamp: new Date().toISOString(),
-                    status: 'pending'
-                });
+                    status: 'pending',
+                    confirmed: false,
+                    confirmationTime: null,
+                    transactionHash: null
+                };
                 
+                pendingDeposits.push(depositRecord);
                 localStorage.setItem('pending_deposits', JSON.stringify(pendingDeposits));
                 
+                // Store deposit in user's transaction history
+                if (!currentUser.transactions) currentUser.transactions = [];
+                currentUser.transactions.push({
+                    type: 'deposit_request',
+                    id: depositId,
+                    amount: amount,
+                    bonus: bonus,
+                    status: 'pending',
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+                
+                // Simulate bot confirmation after 5 seconds (for demo)
+                setTimeout(() => simulateDepositConfirmation(depositId, username, amount, bonus), 5000);
+                
             } catch (error) {
-                console.error('Error sending Telegram notification:', error);
-                // Continue anyway - don't block the user
+                console.error('Error processing deposit:', error);
+                alert('Deposit request submitted but there was an error. Please contact support.');
             }
         }
 
-        async function sendTelegramNotification(amount, username, email) {
-            const message = `🟢 NEW DEPOSIT REQUEST 🟢\n\n` +
-                           `Amount: $${amount.toFixed(2)}\n` +
-                           `Username: ${username}\n` +
-                           `Email: ${email}\n` +
-                           `Time: ${new Date().toLocaleString()}\n\n` +
-                           `Please confirm this payment.`;
+        async function sendEnhancedDepositNotification(amount, username, email, userId, bonus) {
+            const timestamp = new Date().toLocaleString();
+            const depositId = 'DEP' + Date.now().toString().slice(-6);
+            const totalToReceive = amount + bonus;
             
+            const message = `💰 *NEW DEPOSIT REQUEST* 💰\n\n` +
+                           `*Amount:* $${amount.toFixed(2)}\n` +
+                           `*Bonus:* $${bonus.toFixed(2)}\n` +
+                           `*Total:* $${totalToReceive.toFixed(2)}\n` +
+                           `*Username:* ${username}\n` +
+                           `*User ID:* ${userId}\n` +
+                           `*Email:* ${email}\n` +
+                           `*Time:* ${timestamp}\n` +
+                           `*Deposit ID:* ${depositId}\n` +
+                           `*Status:* ⏳ Pending\n\n` +
+                           `*Wallet Address:*\n\`${WALLET_ADDRESS}\`\n\n` +
+                           `*Instructions:*\nSend $${amount.toFixed(2)} in BTC to above address`;
+            
+            // Enhanced inline keyboard with more options
             const inlineKeyboard = {
                 inline_keyboard: [
                     [
                         {
-                            text: "✅ Yes - Payment Received",
-                            callback_data: `confirm_deposit_${username}_${amount}`
+                            text: "✅ Confirm Payment Received",
+                            callback_data: `confirm_deposit_${depositId}_${amount}`
+                        }
+                    ],
+                    [
+                        {
+                            text: "❌ Payment Not Received",
+                            callback_data: `reject_deposit_${depositId}`
                         },
                         {
-                            text: "❌ No - Check Payment",
-                            callback_data: `reject_deposit_${username}_${amount}`
+                            text: "📞 Contact User",
+                            url: `mailto:${email}`
+                        }
+                    ],
+                    [
+                        {
+                            text: "💰 Add Bonus",
+                            callback_data: `add_bonus_${depositId}`
                         }
                     ]
                 ]
             };
             
-            // For demo purposes, we'll simulate the Telegram API call
-            // In a real implementation, you would use:
-            // fetch(`https://api.telegram.org/bot${DEPOSIT_BOT_TOKEN}/sendMessage`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json'
-            //     },
-            //     body: JSON.stringify({
-            //         chat_id: TELEGRAM_GROUP_ID,
-            //         text: message,
-            //         reply_markup: inlineKeyboard
-            //     })
-            // });
-            
-            console.log('Telegram Notification (Demo):', {
+            console.log('Sending Telegram Deposit Notification:', {
                 botToken: DEPOSIT_BOT_TOKEN,
                 groupId: TELEGRAM_GROUP_ID,
                 message: message,
                 inlineKeyboard: inlineKeyboard
             });
             
-            // Simulate API call
+            // Simulate API call for demo
             return new Promise(resolve => {
                 setTimeout(() => {
-                    console.log('Telegram notification sent successfully (simulated)');
+                    console.log('Telegram notification sent to bot');
                     resolve();
                 }, 1000);
             });
+        }
+
+        // Simulate deposit confirmation (for demo)
+        function simulateDepositConfirmation(depositId, username, amount, bonus) {
+            console.log(`Simulating deposit confirmation: ${depositId} for ${username} - $${amount}`);
+            
+            // Update pending deposits
+            const pendingDeposits = JSON.parse(localStorage.getItem('pending_deposits') || '[]');
+            const depositIndex = pendingDeposits.findIndex(d => d.id === depositId);
+            
+            if (depositIndex !== -1) {
+                pendingDeposits[depositIndex].status = 'confirmed';
+                pendingDeposits[depositIndex].confirmed = true;
+                pendingDeposits[depositIndex].confirmationTime = new Date().toISOString();
+                pendingDeposits[depositIndex].transactionHash = '0x' + Math.random().toString(36).substr(2, 64);
+                
+                localStorage.setItem('pending_deposits', JSON.stringify(pendingDeposits));
+                
+                // Update user balance
+                const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
+                if (currentUser.accounts && currentUser.accounts.funding) {
+                    const totalAmount = amount + bonus;
+                    currentUser.accounts.funding.balance += totalAmount;
+                    
+                    // Add to transaction history
+                    if (!currentUser.transactions) currentUser.transactions = [];
+                    currentUser.transactions.push({
+                        type: 'deposit_confirmed',
+                        id: depositId,
+                        amount: totalAmount,
+                        bonus: bonus,
+                        status: 'completed',
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+                }
+            }
         }
 
         // Add CSS for modal display

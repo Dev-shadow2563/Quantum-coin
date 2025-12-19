@@ -1841,8 +1841,10 @@
         startTradingBtn.addEventListener('click', (e) => {
             if (isLoggedIn()) {
                 e.preventDefault();
-                showNotification('You are already logged in! Check the market page to start trading.', 'info');
-                showPage('market');
+                showNotification('Redirecting to dashboard...', 'info');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
             } else {
                 authModal.style.display = 'block';
                 switchTab('signup');
@@ -1852,8 +1854,10 @@
         ctaSignupBtn.addEventListener('click', (e) => {
             if (isLoggedIn()) {
                 e.preventDefault();
-                showNotification('You are already logged in! Check the market page to start trading.', 'info');
-                showPage('market');
+                showNotification('Redirecting to dashboard...', 'info');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
             } else {
                 authModal.style.display = 'block';
                 switchTab('signup');
@@ -2035,11 +2039,13 @@
                 saveUser(existingUser);
                 setCurrentUser(existingUser);
                 
-                showNotification(`Welcome back ${existingUser.username || existingUser.fullName}!`, 'success');
+                showNotification(`Welcome back ${existingUser.username || existingUser.fullName}! Redirecting to dashboard...`, 'success');
                 authModal.style.display = 'none';
                 updateAuthUI();
                 
-                // Stay on current page instead of redirecting to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
             } else {
                 const username = generateUsernameFromEmail(googleUser.email);
                 
@@ -2069,9 +2075,13 @@
                 saveUser(user);
                 setCurrentUser(user);
                 
-                showNotification(`Welcome ${user.username}! Your account has been created.`, 'success');
+                showNotification(`Welcome ${user.username}! Your account has been created. Redirecting to dashboard...`, 'success');
                 authModal.style.display = 'none';
                 updateAuthUI();
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
             }
         }
 
@@ -2270,9 +2280,13 @@
                     saveUser(user);
                     setCurrentUser(user);
                     
-                    showNotification('Login successful!', 'success');
+                    showNotification('Login successful! Redirecting to dashboard...', 'success');
                     authModal.style.display = 'none';
                     updateAuthUI();
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
                 } else {
                     loginError.textContent = 'Invalid password. Please try again.';
                     loginError.style.display = 'block';
@@ -2347,11 +2361,15 @@
             saveUser(user);
             setCurrentUser(user);
             
-            showNotification(`Account created successfully! Welcome ${username}.`, 'success');
+            showNotification(`Account created successfully! Welcome ${username}. Redirecting to dashboard...`, 'success');
             
             // Show success message and switch to login
             authModal.style.display = 'none';
             updateAuthUI();
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1000);
         });
 
         // Contact form submission

@@ -43,32 +43,26 @@
 
         /* Dashboard Header */
         .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             padding: 20px 0;
             border-bottom: 1px solid rgba(0, 240, 255, 0.1);
             margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .back-button {
+            color: var(--primary);
+            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 25px;
-            background: rgba(0, 240, 255, 0.1);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            color: var(--primary);
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            gap: 8px;
+            font-weight: 500;
+            transition: color 0.3s ease;
         }
 
         .back-button:hover {
-            background: rgba(0, 240, 255, 0.2);
-            transform: translateX(-5px);
-            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.3);
+            color: var(--accent);
         }
 
         .header-controls {
@@ -78,28 +72,23 @@
         }
 
         .support-link {
-            color: rgba(226, 250, 252, 0.7);
+            color: var(--primary);
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .support-link:hover {
-            color: var(--primary);
+            color: var(--accent);
         }
 
         /* Withdraw Container */
         .withdraw-container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 40px;
-            background: rgba(10, 10, 31, 0.8);
-            border-radius: 25px;
-            border: 1px solid rgba(0, 240, 255, 0.2);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 50px rgba(0, 240, 255, 0.1);
         }
 
         .withdraw-header {
@@ -109,11 +98,8 @@
 
         .withdraw-header h1 {
             font-size: 2.5rem;
-            background: linear-gradient(to right, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            color: var(--primary);
         }
 
         .withdraw-header p {
@@ -127,33 +113,35 @@
             border-radius: 20px;
             padding: 25px;
             margin-bottom: 30px;
-            border: 1px solid rgba(0, 240, 255, 0.3);
+            border: 1px solid rgba(0, 240, 255, 0.2);
             text-align: center;
         }
 
         .balance-card h3 {
-            font-size: 1rem;
-            color: rgba(226, 250, 252, 0.7);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: var(--light);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
         }
 
         .balance-card .amount {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
 
         .balance-card .subtext {
-            color: rgba(226, 250, 252, 0.6);
+            color: rgba(226, 250, 252, 0.7);
             font-size: 0.9rem;
         }
 
         /* Withdraw Form */
         .withdraw-form {
-            margin-bottom: 40px;
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
         }
 
         .form-group {
@@ -164,13 +152,13 @@
             display: block;
             margin-bottom: 10px;
             color: var(--light);
-            font-weight: 600;
-            font-size: 1.1rem;
+            font-weight: 500;
+            font-size: 1rem;
         }
 
         .form-control {
             width: 100%;
-            padding: 15px 20px;
+            padding: 14px 16px;
             background: rgba(0, 240, 255, 0.05);
             border: 2px solid rgba(0, 240, 255, 0.2);
             border-radius: 12px;
@@ -183,31 +171,27 @@
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-            background: rgba(0, 240, 255, 0.1);
         }
 
         .amount-presets {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 15px;
+            display: flex;
+            gap: 10px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
 
         .amount-preset {
-            padding: 15px;
+            flex: 1;
+            min-width: 80px;
+            padding: 12px;
             background: rgba(0, 240, 255, 0.05);
-            border: 2px solid rgba(0, 240, 255, 0.2);
+            border: 2px solid rgba(0, 240, 255, 0.1);
             border-radius: 10px;
-            color: var(--light);
+            color: rgba(226, 250, 252, 0.7);
             text-align: center;
-            font-weight: 600;
             cursor: pointer;
+            font-weight: 600;
             transition: all 0.3s ease;
-        }
-
-        .amount-preset:hover {
-            background: rgba(0, 240, 255, 0.1);
-            transform: translateY(-3px);
         }
 
         .amount-preset.active {
@@ -216,7 +200,12 @@
             color: var(--primary);
         }
 
-        /* Network Selection */
+        .amount-preset:hover:not(.active) {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        /* Network Selector */
         .network-selector {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -225,18 +214,13 @@
         }
 
         .network-option {
-            padding: 20px;
             background: rgba(0, 240, 255, 0.05);
-            border: 2px solid rgba(0, 240, 255, 0.2);
+            border: 2px solid rgba(0, 240, 255, 0.1);
             border-radius: 12px;
-            text-align: center;
+            padding: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-
-        .network-option:hover {
-            background: rgba(0, 240, 255, 0.1);
-            transform: translateY(-3px);
+            text-align: center;
         }
 
         .network-option.active {
@@ -244,16 +228,28 @@
             border-color: var(--primary);
         }
 
+        .network-option:hover:not(.active) {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
         .network-option .icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-            color: var(--primary);
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.5rem;
+            color: var(--darker);
         }
 
         .network-option .name {
             font-weight: 600;
             color: var(--light);
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .network-option .fee {
@@ -263,97 +259,102 @@
 
         /* Summary */
         .summary {
-            background: rgba(0, 240, 255, 0.05);
+            background: rgba(5, 5, 16, 0.9);
             border-radius: 15px;
             padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(0, 240, 255, 0.2);
+            margin: 25px 0;
+            border: 1px solid rgba(0, 240, 255, 0.1);
         }
 
         .summary-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
-            color: rgba(226, 250, 252, 0.8);
-            font-size: 1.1rem;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.1);
         }
 
-        .summary-row.total {
-            font-size: 1.3rem;
+        .summary-row:last-child {
+            border-bottom: none;
+            padding-top: 15px;
             font-weight: 700;
             color: var(--primary);
-            border-top: 1px solid rgba(0, 240, 255, 0.2);
-            padding-top: 15px;
-            margin-top: 15px;
+            font-size: 1.1rem;
         }
 
         /* Action Buttons */
         .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
         }
 
         .action-btn {
-            padding: 20px;
+            flex: 1;
+            padding: 16px;
             border: none;
-            border-radius: 15px;
-            font-size: 1.1rem;
+            border-radius: 12px;
             font-weight: 600;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .withdraw-btn {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--success), #00cc66);
             color: var(--darker);
         }
 
         .cancel-btn {
             background: rgba(255, 0, 110, 0.1);
-            color: var(--light);
+            color: var(--danger);
             border: 2px solid rgba(255, 0, 110, 0.3);
         }
 
         .action-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 240, 255, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .withdraw-btn:hover {
+            box-shadow: 0 10px 25px rgba(0, 255, 136, 0.3);
         }
 
         .cancel-btn:hover {
-            box-shadow: 0 10px 25px rgba(255, 0, 110, 0.2);
+            box-shadow: 0 10px 25px rgba(255, 0, 110, 0.3);
         }
 
         /* Instructions */
         .instructions {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
             margin-top: 40px;
-            padding: 25px;
-            background: rgba(0, 240, 255, 0.05);
-            border-radius: 15px;
-            border: 1px solid rgba(0, 240, 255, 0.2);
         }
 
         .instructions h3 {
             color: var(--primary);
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             font-size: 1.3rem;
         }
 
         .instructions ol {
             padding-left: 20px;
-            color: rgba(226, 250, 252, 0.8);
-            line-height: 1.8;
+            margin-bottom: 20px;
         }
 
         .instructions li {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            color: rgba(226, 250, 252, 0.8);
+            line-height: 1.5;
         }
 
-        /* Modal Styles */
+        /* Modal */
         .modal {
             position: fixed;
             top: 0;
@@ -361,10 +362,10 @@
             width: 100%;
             height: 100%;
             background: rgba(5, 5, 16, 0.95);
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
+            z-index: 1000;
             backdrop-filter: blur(10px);
             animation: fadeIn 0.3s ease;
         }
@@ -372,9 +373,9 @@
         .modal-content {
             background: rgba(10, 10, 31, 0.95);
             padding: 40px;
-            border-radius: 25px;
-            max-width: 500px;
+            border-radius: 20px;
             width: 90%;
+            max-width: 500px;
             border: 1px solid rgba(0, 240, 255, 0.3);
             box-shadow: 0 0 50px rgba(0, 240, 255, 0.3);
             text-align: center;
@@ -393,35 +394,30 @@
             color: var(--darker);
         }
 
-        .modal h2 {
-            font-size: 2rem;
+        .modal-content h2 {
+            color: var(--primary);
             margin-bottom: 20px;
-            background: linear-gradient(to right, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            font-size: 1.8rem;
         }
 
-        .modal p {
+        .modal-content p {
             color: rgba(226, 250, 252, 0.8);
-            margin-bottom: 25px;
-            font-size: 1.1rem;
             line-height: 1.6;
+            margin-bottom: 30px;
         }
 
         .modal-buttons {
             display: flex;
             gap: 15px;
-            margin-top: 30px;
         }
 
         .modal-btn {
             flex: 1;
-            padding: 15px;
+            padding: 14px;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
             font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -433,13 +429,34 @@
 
         .modal-btn-secondary {
             background: rgba(0, 240, 255, 0.1);
-            color: var(--light);
+            color: var(--primary);
             border: 2px solid rgba(0, 240, 255, 0.3);
         }
 
         .modal-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0, 240, 255, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 240, 255, 0.2);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* Responsive */
@@ -448,46 +465,30 @@
                 padding: 0 15px;
             }
             
-            .withdraw-container {
-                padding: 25px 20px;
+            .dashboard-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
             }
             
             .withdraw-header h1 {
                 font-size: 2rem;
-            }
-            
-            .action-buttons {
-                grid-template-columns: 1fr;
             }
             
             .amount-presets {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .network-selector {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .withdraw-header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .balance-card .amount {
-                font-size: 2rem;
-            }
-            
-            .modal-content {
-                padding: 25px 20px;
-            }
-            
-            .modal-buttons {
                 flex-direction: column;
             }
             
             .network-selector {
                 grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
             }
         }
     </style>
@@ -501,9 +502,13 @@
                 Back to Dashboard
             </a>
             <div class="header-controls">
-                <a href="mailto:ashleyslester200@gmail.com" class="support-link">
+                <div id="connectionStatus" style="display: flex; align-items: center; gap: 8px; color: var(--success);">
+                    <i class="fas fa-circle" style="font-size: 0.7rem;"></i>
+                    <span>Connected</span>
+                </div>
+                <a href="mailto:support@quantumcoin.com" class="support-link">
                     <i class="fas fa-envelope"></i>
-                    Support: ashleyslester200@gmail.com
+                    Support
                 </a>
             </div>
         </div>
@@ -519,7 +524,7 @@
             <!-- Current Balance -->
             <div class="balance-card">
                 <h3>Available Balance for Withdrawal</h3>
-                <div class="amount" id="currentBalance">$3,506.83</div>
+                <div class="amount" id="currentBalance">$0.00</div>
                 <div class="subtext">Minimum withdrawal: $10.00 | Processing time: 1-24 hours</div>
             </div>
 
@@ -550,17 +555,17 @@
                         <div class="network-option active" data-network="BTC">
                             <div class="icon"><i class="fab fa-bitcoin"></i></div>
                             <div class="name">Bitcoin (BTC)</div>
-                            <div class="fee">Network Fee: $1-5</div>
+                            <div class="fee">Network Fee: $3.00</div>
                         </div>
                         <div class="network-option" data-network="ETH">
                             <div class="icon"><i class="fab fa-ethereum"></i></div>
                             <div class="name">Ethereum (ETH)</div>
-                            <div class="fee">Network Fee: $3-10</div>
+                            <div class="fee">Network Fee: $8.00</div>
                         </div>
                         <div class="network-option" data-network="USDT">
                             <div class="icon"><i class="fas fa-dollar-sign"></i></div>
                             <div class="name">USDT (TRC20)</div>
-                            <div class="fee">Network Fee: $1</div>
+                            <div class="fee">Network Fee: $1.00</div>
                         </div>
                     </div>
                 </div>
@@ -612,46 +617,52 @@
 
             <!-- Instructions -->
             <div class="instructions">
-                <h3>Withdrawal Instructions:</h3>
+                <h3>Withdrawal Process:</h3>
                 <ol>
-                    <li>Enter the amount you want to withdraw (minimum $10)</li>
-                    <li>Select the cryptocurrency network for withdrawal</li>
-                    <li>Enter your personal wallet address (double-check for accuracy)</li>
-                    <li>Review the fees and amount you will receive</li>
-                    <li>Click "Confirm Withdrawal" to submit your request</li>
-                    <li>Our team will process your withdrawal within 24 hours</li>
-                    <li>You will receive a notification when funds are sent</li>
+                    <li>Enter withdrawal amount (minimum $10)</li>
+                    <li>Select cryptocurrency network</li>
+                    <li>Enter your wallet address (double-check carefully)</li>
+                    <li>Submit your withdrawal request</li>
+                    <li>Wait for admin approval (usually within 24 hours)</li>
+                    <li>Receive notification when funds are sent</li>
+                    <li>Funds will arrive in your wallet shortly after approval</li>
                 </ol>
                 <p style="margin-top: 15px; color: var(--warning); font-weight: 600;">
-                    <i class="fas fa-exclamation-triangle"></i> Important: Withdrawals can take 1-24 hours to process. Make sure your wallet address is correct!
+                    <i class="fas fa-exclamation-triangle"></i> Important: All withdrawals require manual approval for security. Make sure your wallet address is correct!
                 </p>
             </div>
         </div>
     </div>
 
     <!-- Confirmation Modal -->
-    <div class="modal" id="confirmationModal" style="display: none;">
+    <div class="modal" id="confirmationModal">
         <div class="modal-content">
             <div class="modal-icon">
                 <i class="fas fa-clock"></i>
             </div>
-            <h2>Withdrawal Submitted</h2>
+            <h2>Withdrawal Request Submitted</h2>
             <p id="modalMessage">
-                Your withdrawal request for <strong>$500.00</strong> has been submitted to our team.<br><br>
-                The funds will be sent to your wallet address within 24 hours. You will receive a notification once the transaction is completed.
+                Your withdrawal request for <strong>$500.00</strong> has been submitted.<br><br>
+                Our admin team will review your request within 24 hours. You'll receive a notification once it's approved and the funds are sent to your wallet.
             </p>
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-primary" id="okBtn">
                     Back to Dashboard
+                </button>
+                <button class="modal-btn modal-btn-secondary" id="viewRequestBtn">
+                    View Request
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // Telegram Bot Configuration
-        const WITHDRAW_BOT_TOKEN = '8524688798:AAH2wyXiliUT73GjLs_VdR5i2TCPiuYtEFs';
-        const TELEGRAM_GROUP_ID = '-5046795522';
+        const API_URL = 'http://localhost:3000/api';
+        let token = null;
+        let currentUser = null;
+        let transactionId = null;
+        let selectedNetwork = 'BTC';
+        let userBalance = 0;
 
         // DOM Elements
         const withdrawAmountInput = document.getElementById('withdrawAmount');
@@ -668,26 +679,27 @@
         const confirmationModal = document.getElementById('confirmationModal');
         const modalMessage = document.getElementById('modalMessage');
         const okBtn = document.getElementById('okBtn');
+        const viewRequestBtn = document.getElementById('viewRequestBtn');
         const withdrawForm = document.getElementById('withdrawForm');
 
-        // State
-        let selectedNetwork = 'BTC';
-        let userBalance = 3506.83;
-        let networkFees = {
+        // Network fees
+        const networkFees = {
             'BTC': 3.00,
             'ETH': 8.00,
             'USDT': 1.00
         };
 
-        // Wallet validation patterns
-        const walletPatterns = {
-            'BTC': /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$/,
-            'ETH': /^0x[a-fA-F0-9]{40}$/,
-            'USDT': /^T[1-9A-HJ-NP-Za-km-z]{33}$/
-        };
-
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication
+            token = localStorage.getItem('quantumcoin_token');
+            currentUser = JSON.parse(localStorage.getItem('quantumcoin_user') || 'null');
+            
+            if (!token || !currentUser) {
+                window.location.href = '/';
+                return;
+            }
+            
             // Load user data
             loadUserData();
             
@@ -700,10 +712,10 @@
         });
 
         function loadUserData() {
-            const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-            const fundingBalance = currentUser.accounts?.funding?.balance || 3506.83;
-            userBalance = fundingBalance;
-            currentBalance.textContent = `$${fundingBalance.toFixed(2)}`;
+            if (currentUser) {
+                userBalance = currentUser.funding_balance || 0;
+                currentBalance.textContent = `$${userBalance.toFixed(2)}`;
+            }
         }
 
         function setupEventListeners() {
@@ -740,9 +752,9 @@
             });
             
             // Form submission
-            withdrawForm.addEventListener('submit', function(e) {
+            withdrawForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                processWithdrawal();
+                await processWithdrawal();
             });
             
             // Cancel button
@@ -752,7 +764,12 @@
             
             // OK button in modal
             okBtn.addEventListener('click', function() {
-                completeWithdrawal();
+                window.location.href = 'dashboard.html';
+            });
+            
+            // View request button
+            viewRequestBtn.addEventListener('click', function() {
+                window.location.href = 'dashboard.html';
             });
         }
 
@@ -781,256 +798,161 @@
 
         function updateSummary() {
             const amount = parseFloat(withdrawAmountInput.value) || 0;
-            const processingFee = amount * 0.01; // 1% fee
+            const processingFee = amount * 0.01;
             const networkFee = networkFees[selectedNetwork] || 3.00;
             const totalReceived = amount - processingFee - networkFee;
             
-            // Format with 2 decimal places
             summaryAmount.textContent = `$${amount.toFixed(2)}`;
             summaryFee.textContent = `$${processingFee.toFixed(2)}`;
             summaryNetworkFee.textContent = `$${networkFee.toFixed(2)}`;
             summaryTotal.textContent = `$${totalReceived.toFixed(2)}`;
         }
 
-        function processWithdrawal() {
+        async function apiRequest(endpoint, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    ...options,
+                    headers
+                });
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('quantumcoin_token');
+                    localStorage.removeItem('quantumcoin_user');
+                    window.location.href = '/';
+                    return null;
+                }
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Request failed');
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API request failed:', error);
+                showError(error.message);
+                return null;
+            }
+        }
+
+        async function processWithdrawal() {
             const amount = parseFloat(withdrawAmountInput.value) || 0;
             const walletAddress = walletAddressInput.value.trim();
             
             // Validate amount
             if (amount < 10) {
-                alert('Minimum withdrawal amount is $10.00');
+                showError('Minimum withdrawal amount is $10.00');
                 withdrawAmountInput.focus();
                 return;
             }
             
             if (amount > userBalance) {
-                alert(`Insufficient balance! Available: $${userBalance.toFixed(2)}`);
+                showError(`Insufficient balance! Available: $${userBalance.toFixed(2)}`);
                 withdrawAmountInput.focus();
                 return;
             }
             
             // Validate wallet address
             if (!walletAddress) {
-                alert('Please enter your wallet address');
+                showError('Please enter your wallet address');
                 walletAddressInput.focus();
                 return;
             }
             
-            const pattern = walletPatterns[selectedNetwork];
-            if (pattern && !pattern.test(walletAddress)) {
-                alert(`Please enter a valid ${selectedNetwork} wallet address`);
-                walletAddressInput.focus();
-                return;
+            // Basic wallet validation
+            if (selectedNetwork === 'BTC' && !walletAddress.startsWith('1') && !walletAddress.startsWith('3') && !walletAddress.startsWith('bc1')) {
+                if (!confirm('This doesn\'t look like a valid Bitcoin address. Are you sure it\'s correct?')) {
+                    return;
+                }
+            }
+            
+            if (selectedNetwork === 'ETH' && !walletAddress.startsWith('0x')) {
+                if (!confirm('This doesn\'t look like a valid Ethereum address. Are you sure it\'s correct?')) {
+                    return;
+                }
+            }
+            
+            if (selectedNetwork === 'USDT' && !walletAddress.startsWith('T')) {
+                if (!confirm('This doesn\'t look like a valid TRC20 address. Are you sure it\'s correct?')) {
+                    return;
+                }
             }
             
             // Calculate fees
             const processingFee = amount * 0.01;
             const networkFee = networkFees[selectedNetwork] || 3.00;
-            const totalReceived = amount - processingFee - networkFee;
+            const totalFees = processingFee + networkFee;
+            const receiveAmount = amount - totalFees;
             
-            // Get user data
-            const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-            const username = currentUser.username || 'Unknown User';
-            const email = currentUser.email || 'No email provided';
-            const userId = currentUser.id || Date.now().toString();
-            
-            // Show confirmation modal
-            modalMessage.innerHTML = `
-                <div style="text-align: left; margin-bottom: 20px;">
-                    <strong>Withdrawal Summary:</strong><br>
-                    • Amount: $${amount.toFixed(2)}<br>
-                    • Network: ${selectedNetwork}<br>
-                    • Wallet: ${walletAddress.substring(0, 20)}...<br>
-                    • Processing Fee: $${processingFee.toFixed(2)}<br>
-                    • Network Fee: $${networkFee.toFixed(2)}<br>
-                    • You Receive: $${totalReceived.toFixed(2)}<br>
-                    • Status: <span style="color: var(--warning);">Processing</span>
-                </div>
-                <p>Your withdrawal request has been sent to our payment team.<br>
-                You will receive the funds within 1-24 hours.</p>
-            `;
-            confirmationModal.style.display = 'flex';
+            // Disable submit button and show loading
+            submitWithdrawBtn.disabled = true;
+            submitWithdrawBtn.innerHTML = '<div class="loading-spinner"></div>';
             
             try {
-                // Send enhanced notification to Telegram
-                await sendEnhancedWithdrawalNotification(amount, username, email, userId, selectedNetwork, walletAddress, totalReceived);
-                
-                // Store pending withdrawal
-                const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
-                const withdrawalId = 'WD' + Date.now() + Math.random().toString(36).substr(2, 9);
-                
-                const withdrawalRecord = {
-                    id: withdrawalId,
-                    amount: amount,
-                    network: selectedNetwork,
-                    walletAddress: walletAddress,
-                    username: username,
-                    email: email,
-                    userId: userId,
-                    timestamp: new Date().toISOString(),
-                    status: 'processing',
-                    processingFee: processingFee,
-                    networkFee: networkFee,
-                    totalReceived: totalReceived,
-                    completed: false,
-                    transactionHash: null
-                };
-                
-                pendingWithdrawals.push(withdrawalRecord);
-                localStorage.setItem('pending_withdrawals', JSON.stringify(pendingWithdrawals));
-                
-                // Store in user's transaction history
-                if (!currentUser.transactions) currentUser.transactions = [];
-                currentUser.transactions.push({
-                    type: 'withdrawal_request',
-                    id: withdrawalId,
-                    amount: amount,
-                    network: selectedNetwork,
-                    status: 'processing',
-                    timestamp: new Date().toISOString()
+                const result = await apiRequest('/withdraw', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        amount,
+                        network: selectedNetwork,
+                        wallet_address: walletAddress
+                    })
                 });
                 
-                // Deduct balance immediately
-                currentUser.accounts.funding.balance -= amount;
-                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
-                
-                // Simulate withdrawal processing (for demo)
-                setTimeout(() => simulateWithdrawalCompletion(withdrawalId, username, amount), 3000);
-                
-            } catch (error) {
-                console.error('Error processing withdrawal:', error);
-                alert('Withdrawal request submitted but there was an error. Please contact support.');
-            }
-        }
-
-        async function sendEnhancedWithdrawalNotification(amount, username, email, userId, network, walletAddress, totalReceived) {
-            const timestamp = new Date().toLocaleString();
-            const withdrawalId = 'WD' + Date.now().toString().slice(-6);
-            
-            const message = `💸 *NEW WITHDRAWAL REQUEST* 💸\n\n` +
-                           `*Amount:* $${amount.toFixed(2)}\n` +
-                           `*Network:* ${network}\n` +
-                           `*To Send:* $${totalReceived.toFixed(2)} ${network}\n` +
-                           `*Username:* ${username}\n` +
-                           `*User ID:* ${userId}\n` +
-                           `*Email:* ${email}\n` +
-                           `*Time:* ${timestamp}\n` +
-                           `*Withdrawal ID:* ${withdrawalId}\n` +
-                           `*Status:* ⚡ Processing\n\n` +
-                           `*Wallet Address:*\n\`${walletAddress}\`\n\n` +
-                           `*Action Required:*\nSend $${totalReceived.toFixed(2)} worth of ${network}`;
-            
-            const inlineKeyboard = {
-                inline_keyboard: [
-                    [
-                        {
-                            text: "✅ Payment Sent",
-                            callback_data: `confirm_withdrawal_${withdrawalId}`
-                        }
-                    ],
-                    [
-                        {
-                            text: "📞 Contact User",
-                            url: `mailto:${email}`
-                        },
-                        {
-                            text: "⚠️ Issue",
-                            callback_data: `withdrawal_issue_${withdrawalId}`
-                        }
-                    ]
-                ]
-            };
-            
-            console.log('Sending Telegram Withdrawal Notification:', {
-                botToken: WITHDRAW_BOT_TOKEN,
-                groupId: TELEGRAM_GROUP_ID,
-                message: message,
-                inlineKeyboard: inlineKeyboard
-            });
-            
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    console.log('Withdrawal notification sent to bot');
-                    resolve();
-                }, 1000);
-            });
-        }
-
-        // Simulate withdrawal completion (for demo)
-        function simulateWithdrawalCompletion(withdrawalId, username, amount) {
-            console.log(`Simulating withdrawal completion: ${withdrawalId} for ${username} - $${amount}`);
-            
-            const pendingWithdrawals = JSON.parse(localStorage.getItem('pending_withdrawals') || '[]');
-            const withdrawalIndex = pendingWithdrawals.findIndex(w => w.id === withdrawalId);
-            
-            if (withdrawalIndex !== -1) {
-                pendingWithdrawals[withdrawalIndex].status = 'completed';
-                pendingWithdrawals[withdrawalIndex].completed = true;
-                pendingWithdrawals[withdrawalIndex].transactionHash = '0x' + Math.random().toString(36).substr(2, 64);
-                pendingWithdrawals[withdrawalIndex].completionTime = new Date().toISOString();
-                
-                localStorage.setItem('pending_withdrawals', JSON.stringify(pendingWithdrawals));
-                
-                // Update user transaction history
-                const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-                if (currentUser.transactions) {
-                    const transaction = currentUser.transactions.find(t => t.id === withdrawalId);
-                    if (transaction) {
-                        transaction.status = 'completed';
-                        transaction.completionTime = new Date().toISOString();
-                        transaction.transactionHash = pendingWithdrawals[withdrawalIndex].transactionHash;
-                    }
+                if (result) {
+                    transactionId = result.transactionId;
+                    
+                    // Show confirmation modal
+                    modalMessage.innerHTML = `
+                        <div style="text-align: left; margin-bottom: 20px;">
+                            <strong>Withdrawal Request Summary:</strong><br>
+                            • Amount: $${amount.toFixed(2)}<br>
+                            • Network: ${selectedNetwork}<br>
+                            • Wallet: ${walletAddress.substring(0, 20)}...<br>
+                            • Processing Fee: $${processingFee.toFixed(2)}<br>
+                            • Network Fee: $${networkFee.toFixed(2)}<br>
+                            • Total Fees: $${totalFees.toFixed(2)}<br>
+                            • You Receive: $${receiveAmount.toFixed(2)}<br>
+                            • Transaction ID: ${result.transactionId}<br>
+                            • Status: <span style="color: var(--warning);">Pending Approval</span><br>
+                            • Time: ${new Date().toLocaleTimeString()}
+                        </div>
+                        <p>${result.message}<br><br>
+                        Our admin team will review your request within 24 hours.<br>
+                        You'll receive a notification once it's approved and funds are sent.</p>
+                    `;
+                    confirmationModal.style.display = 'flex';
+                    
+                    // Update user balance locally
+                    currentUser.funding_balance -= amount;
+                    localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+                    loadUserData();
                 }
-                localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                // Re-enable button
+                submitWithdrawBtn.disabled = false;
+                submitWithdrawBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Withdrawal';
             }
         }
 
-        function completeWithdrawal() {
-            const amount = parseFloat(withdrawAmountInput.value) || 0;
-            
-            // Update user transaction history for immediate feedback
-            const currentUser = JSON.parse(localStorage.getItem('quantumcoin_currentUser') || '{}');
-            
-            // Add withdrawal activity
-            const withdrawalActivity = {
-                type: 'withdraw',
-                amount: amount,
-                symbol: 'USD',
-                value: amount,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                date: new Date().toLocaleDateString(),
-                activity: { icon: 'fa-external-link-alt', color: 'var(--warning)', text: 'Withdrew' }
-            };
-            
-            if (!currentUser.accounts.funding.activities) {
-                currentUser.accounts.funding.activities = [];
-            }
-            currentUser.accounts.funding.activities.unshift(withdrawalActivity);
-            
-            // Keep only last 10 activities
-            if (currentUser.accounts.funding.activities.length > 10) {
-                currentUser.accounts.funding.activities.pop();
-            }
-            
-            localStorage.setItem('quantumcoin_currentUser', JSON.stringify(currentUser));
-            
-            // Redirect to dashboard
-            window.location.href = 'dashboard.html';
+        function showError(message) {
+            alert('Error: ' + message);
         }
 
-        // Add CSS for modal display
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === confirmationModal) {
+                confirmationModal.style.display = 'none';
             }
-            
-            .modal {
-                animation: fadeIn 0.3s ease;
-            }
-        `;
-        document.head.appendChild(style);
+        });
     </script>
 </body>
 </html>

@@ -1788,8 +1788,8 @@
 
         // ========== AUTH MODAL FUNCTIONALITY ==========
         const authModal = document.getElementById('authModal');
-        const loginBtn = document.getElementById('loginBtn');
-        const signupBtn = document.getElementById('signupBtn');
+        let loginBtn = document.getElementById('loginBtn');
+        let signupBtn = document.getElementById('signupBtn');
         const startTradingBtn = document.getElementById('startTradingBtn');
         const ctaSignupBtn = document.getElementById('ctaSignupBtn');
         const closeModal = document.getElementById('closeModal');
@@ -1804,28 +1804,60 @@
         const registerSuccess = document.getElementById('registerSuccess');
 
         // Open modal with login form
-        loginBtn.addEventListener('click', () => {
-            authModal.style.display = 'block';
-            switchTab('login');
-            registerSuccess.style.display = 'none';
+        loginBtn.addEventListener('click', function(e) {
+            if (isLoggedIn()) {
+                e.preventDefault();
+                const currentUser = getCurrentUser();
+                const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                if (confirm(`Logout of ${displayName}?`)) {
+                    logout();
+                    window.location.reload();
+                }
+            } else {
+                authModal.style.display = 'block';
+                switchTab('login');
+                registerSuccess.style.display = 'none';
+            }
         });
 
         // Open modal with signup form
-        signupBtn.addEventListener('click', () => {
-            authModal.style.display = 'block';
-            switchTab('signup');
-            registerError.style.display = 'none';
+        signupBtn.addEventListener('click', function(e) {
+            if (isLoggedIn()) {
+                e.preventDefault();
+                const currentUser = getCurrentUser();
+                const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                if (confirm(`You're already logged in as ${displayName}. Do you want to logout?`)) {
+                    logout();
+                    window.location.reload();
+                }
+            } else {
+                authModal.style.display = 'block';
+                switchTab('signup');
+                registerError.style.display = 'none';
+            }
         });
 
         // Open modal from "Start Trading" buttons
-        startTradingBtn.addEventListener('click', () => {
-            authModal.style.display = 'block';
-            switchTab('signup');
+        startTradingBtn.addEventListener('click', (e) => {
+            if (isLoggedIn()) {
+                e.preventDefault();
+                showNotification('You are already logged in! Check the market page to start trading.', 'info');
+                showPage('market');
+            } else {
+                authModal.style.display = 'block';
+                switchTab('signup');
+            }
         });
 
-        ctaSignupBtn.addEventListener('click', () => {
-            authModal.style.display = 'block';
-            switchTab('signup');
+        ctaSignupBtn.addEventListener('click', (e) => {
+            if (isLoggedIn()) {
+                e.preventDefault();
+                showNotification('You are already logged in! Check the market page to start trading.', 'info');
+                showPage('market');
+            } else {
+                authModal.style.display = 'block';
+                switchTab('signup');
+            }
         });
 
         // Close modal
@@ -2007,9 +2039,7 @@
                 authModal.style.display = 'none';
                 updateAuthUI();
                 
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+                // Stay on current page instead of redirecting to dashboard
             } else {
                 const username = generateUsernameFromEmail(googleUser.email);
                 
@@ -2042,10 +2072,6 @@
                 showNotification(`Welcome ${user.username}! Your account has been created.`, 'success');
                 authModal.style.display = 'none';
                 updateAuthUI();
-                
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
             }
         }
 
@@ -2154,10 +2180,16 @@
                     loginBtn.classList.add('logged-in');
                     signupBtn.style.display = 'none';
                     
-                    loginBtn.removeEventListener('click', openLoginModal);
+                    // Remove all existing click listeners first
+                    const newLoginBtn = loginBtn.cloneNode(true);
+                    loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+                    loginBtn = newLoginBtn;
+                    
+                    // Add logout functionality
                     loginBtn.addEventListener('click', (e) => {
                         e.preventDefault();
-                        if (confirm('Are you sure you want to logout?')) {
+                        e.stopPropagation();
+                        if (confirm(`Logout of ${displayName}?`)) {
                             logout();
                             window.location.reload();
                         }
@@ -2168,14 +2200,49 @@
                 loginBtn.classList.remove('logged-in');
                 signupBtn.style.display = 'block';
                 
-                loginBtn.removeEventListener('click', logout);
-                loginBtn.addEventListener('click', openLoginModal);
+                // Remove all existing click listeners first
+                const newLoginBtn = loginBtn.cloneNode(true);
+                loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+                loginBtn = newLoginBtn;
+                
+                // Re-add login functionality
+                loginBtn.addEventListener('click', function(e) {
+                    if (isLoggedIn()) {
+                        e.preventDefault();
+                        const currentUser = getCurrentUser();
+                        const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                        if (confirm(`Logout of ${displayName}?`)) {
+                            logout();
+                            window.location.reload();
+                        }
+                    } else {
+                        authModal.style.display = 'block';
+                        switchTab('login');
+                        registerSuccess.style.display = 'none';
+                    }
+                });
             }
-        }
-
-        function openLoginModal() {
-            authModal.style.display = 'block';
-            switchTab('login');
+            
+            // Update signup button
+            const newSignupBtn = signupBtn.cloneNode(true);
+            signupBtn.parentNode.replaceChild(newSignupBtn, signupBtn);
+            signupBtn = newSignupBtn;
+            
+            signupBtn.addEventListener('click', function(e) {
+                if (isLoggedIn()) {
+                    e.preventDefault();
+                    const currentUser = getCurrentUser();
+                    const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                    if (confirm(`You're already logged in as ${displayName}. Do you want to logout?`)) {
+                        logout();
+                        window.location.reload();
+                    }
+                } else {
+                    authModal.style.display = 'block';
+                    switchTab('signup');
+                    registerError.style.display = 'none';
+                }
+            });
         }
 
         // ========== FORM SUBMISSION HANDLERS ==========
@@ -2203,13 +2270,9 @@
                     saveUser(user);
                     setCurrentUser(user);
                     
-                    showNotification('Login successful! Redirecting to dashboard...', 'success');
+                    showNotification('Login successful!', 'success');
                     authModal.style.display = 'none';
                     updateAuthUI();
-                    
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
                 } else {
                     loginError.textContent = 'Invalid password. Please try again.';
                     loginError.style.display = 'block';
@@ -2288,13 +2351,6 @@
             
             // Show success message and switch to login
             authModal.style.display = 'none';
-            setTimeout(() => {
-                authModal.style.display = 'block';
-                switchTab('login');
-                registerSuccess.style.display = 'block';
-                registerSuccess.textContent = 'Registration successful! Please login.';
-            }, 500);
-            
             updateAuthUI();
         });
 
@@ -2511,24 +2567,6 @@
             // Start price updates
             setInterval(updateCoinPrices, 2000);
             
-            // If user is already logged in and tries to open auth modal, show logout confirmation
-            if (isLoggedIn()) {
-                const currentUser = getCurrentUser();
-                if (currentUser) {
-                    const authButtons = document.querySelectorAll('.btn-login, .btn-signup, #startTradingBtn, #ctaSignupBtn');
-                    authButtons.forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
-                            if (confirm(`You are logged in as ${displayName}. Do you want to logout?`)) {
-                                logout();
-                                window.location.reload();
-                            }
-                        });
-                    });
-                }
-            }
-            
             // Add scroll animations
             const observerOptions = {
                 threshold: 0.1,
@@ -2564,7 +2602,7 @@
         // Admin access (hidden feature)
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                window.location.href = '/admin';
+                showNotification('Admin access not implemented in demo version', 'info');
             }
         });
     </script>

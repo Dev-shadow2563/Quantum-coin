@@ -1881,6 +1881,14 @@
         const dashboardLink = document.getElementById('dashboardLink');
 
         function showPage(pageId) {
+            // If trying to show dashboard but not logged in
+            if (pageId === 'dashboard' && !isLoggedIn()) {
+                showNotification('Please login first to access the dashboard.', 'error');
+                authModal.style.display = 'block';
+                switchTab('login');
+                return;
+            }
+            
             // Hide all pages
             pageSections.forEach(section => {
                 section.classList.remove('active');
@@ -1945,7 +1953,9 @@
                     localStorage.removeItem('quantumcoin_token');
                     localStorage.removeItem('quantumcoin_user');
                     showNotification('Session expired. Please login again.', 'error');
-                    window.location.href = '/';
+                    // Instead of redirecting, show login modal
+                    authModal.style.display = 'block';
+                    switchTab('login');
                     return null;
                 }
                 
@@ -1963,7 +1973,7 @@
         }
 
         // ========== GOOGLE AUTHENTICATION ==========
-        const GOOGLE_CLIENT_ID = '960526558312-71hbbd2t528lu2sstpg0sn0vs1t9vek3.apps.googleusercontent.com';
+        const GOOGLE_CLIENT_ID = '960526558312-71hbbd2t528lu2sstpg0vs1t9vek3.apps.googleusercontent.com';
         
         // Initialize Google Identity Services
         function initializeGoogleAuth() {
@@ -2049,7 +2059,7 @@
                 // Update UI
                 updateAuthUI();
                 
-                // Redirect to dashboard
+                // Redirect to dashboard.html
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
@@ -2057,22 +2067,6 @@
             } catch (error) {
                 console.error('Google authentication failed:', error);
                 showNotification('Google authentication failed. Please try again or use email signup.', 'error');
-            }
-        }
-
-        // Decode JWT token
-        function decodeJWT(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                
-                return JSON.parse(jsonPayload);
-            } catch (error) {
-                console.error('Error decoding JWT:', error);
-                return null;
             }
         }
 
@@ -2153,6 +2147,20 @@
                 switchTab('signup');
             }
         });
+
+        // Dashboard link handling
+        if (dashboardLink) {
+            dashboardLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (isLoggedIn()) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    showNotification('Please login first to access the dashboard.', 'error');
+                    authModal.style.display = 'block';
+                    switchTab('login');
+                }
+            });
+        }
 
         // Trade Now button in dashboard
         if (tradeNowBtn) {
@@ -2365,60 +2373,6 @@
             });
         }
 
-        // Show dashboard function
-        function showDashboard() {
-            if (!isLoggedIn()) {
-                showNotification('Please login first to access the dashboard.', 'error');
-                authModal.style.display = 'block';
-                switchTab('login');
-                return;
-            }
-            
-            const currentUser = getCurrentUser();
-            const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'Trader';
-            
-            // Update welcome message
-            document.getElementById('dashboardWelcome').textContent = `Welcome, ${displayName}!`;
-            
-            // Update dashboard stats
-            const dashboardStats = document.getElementById('dashboardStats');
-            if (dashboardStats && currentUser) {
-                const balance = currentUser.funding_balance || currentUser.balance || 0;
-                const demoBalance = currentUser.demo_balance || 100000;
-                const portfolioValue = currentUser.portfolioValue || balance * 1.5;
-                const profitLoss = currentUser.profitLoss || (portfolioValue - balance);
-                const isPositive = profitLoss >= 0;
-                
-                dashboardStats.innerHTML = `
-                    <div class="dashboard-card">
-                        <h3>Funding Account</h3>
-                        <div class="dashboard-stats">$${balance.toFixed(2)}</div>
-                        <p>Available for trading</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Demo Account</h3>
-                        <div class="dashboard-stats">$${demoBalance.toFixed(2)}</div>
-                        <p>Practice trading</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Portfolio Value</h3>
-                        <div class="dashboard-stats">$${portfolioValue.toFixed(2)}</div>
-                        <p>Total holdings value</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Profit/Loss</h3>
-                        <div class="dashboard-stats ${isPositive ? 'positive' : 'negative'}">
-                            ${isPositive ? '+' : ''}$${Math.abs(profitLoss).toFixed(2)}
-                        </div>
-                        <p>Your total returns</p>
-                    </div>
-                `;
-            }
-            
-            // Show dashboard
-            showPage('dashboard');
-        }
-
         // ========== FORM SUBMISSION HANDLERS ==========
         // Login form submission
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -2458,7 +2412,7 @@
                 showNotification('Login successful! Welcome back.', 'success');
                 updateAuthUI();
                 
-                // Redirect to dashboard
+                // Redirect to dashboard.html
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
@@ -2536,7 +2490,7 @@
                 showNotification('Account created successfully! Welcome to QuantumCoin.', 'success');
                 updateAuthUI();
                 
-                // Redirect to dashboard
+                // Redirect to dashboard.html
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);

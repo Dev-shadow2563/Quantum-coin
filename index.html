@@ -1068,6 +1068,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: 10px;
+            position: relative;
         }
 
         .auth-submit:hover {
@@ -1217,13 +1218,14 @@
 
         /* Loading Spinner */
         .loading-spinner {
-            width: 40px;
-            height: 40px;
+            width: 20px;
+            height: 20px;
             border: 3px solid rgba(0, 240, 255, 0.2);
             border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 0 auto;
+            display: none;
         }
 
         @keyframes spin {
@@ -1811,12 +1813,15 @@
                     <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
                 </div>
                 
+                <!-- Google Sign In Button -->
+                <div id="google-signin-container"></div>
+                
                 <div class="divider">
                     <span>or</span>
                 </div>
                 <button type="submit" class="auth-submit" id="loginSubmitBtn">
                     <span>Login to Your Account</span>
-                    <div class="loading-spinner" style="display: none; margin: 0 auto;"></div>
+                    <div class="loading-spinner"></div>
                 </button>
                 <div class="auth-footer">
                     <p>Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
@@ -1851,12 +1856,15 @@
                     <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password" required>
                 </div>
                 
+                <!-- Google Sign Up Button -->
+                <div id="google-signup-container"></div>
+                
                 <div class="divider">
                     <span>or</span>
                 </div>
                 <button type="submit" class="auth-submit" id="signupSubmitBtn">
                     <span>Create Your Account</span>
-                    <div class="loading-spinner" style="display: none; margin: 0 auto;"></div>
+                    <div class="loading-spinner"></div>
                 </button>
                 <div class="auth-footer">
                     <p>Already have an account? <a href="#" id="switchToLogin">Login</a></p>
@@ -1954,6 +1962,120 @@
             }
         }
 
+        // ========== GOOGLE AUTHENTICATION ==========
+        const GOOGLE_CLIENT_ID = '960526558312-71hbbd2t528lu2sstpg0sn0vs1t9vek3.apps.googleusercontent.com';
+        
+        // Initialize Google Identity Services
+        function initializeGoogleAuth() {
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleAuthResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                    context: 'signin'
+                });
+
+                renderGoogleSignInButtons();
+            } else {
+                console.error('Google Identity Services not loaded');
+                showNotification('Google authentication is currently unavailable. Please try email signup.', 'error');
+            }
+        }
+
+        // Render Google Sign-In buttons
+        function renderGoogleSignInButtons() {
+            const loginContainer = document.getElementById('google-signin-container');
+            const signupContainer = document.getElementById('google-signup-container');
+            
+            if (loginContainer) {
+                google.accounts.id.renderButton(
+                    loginContainer,
+                    {
+                        type: 'standard',
+                        theme: 'outline',
+                        size: 'large',
+                        text: 'continue_with',
+                        shape: 'rectangular',
+                        logo_alignment: 'left',
+                        width: '100%'
+                    }
+                );
+            }
+            
+            if (signupContainer) {
+                google.accounts.id.renderButton(
+                    signupContainer,
+                    {
+                        type: 'standard',
+                        theme: 'outline',
+                        size: 'large',
+                        text: 'signup_with',
+                        shape: 'rectangular',
+                        logo_alignment: 'left',
+                        width: '100%'
+                    }
+                );
+            }
+            
+            // Optional: Show the One Tap dialog
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    // Continue with other authentication methods
+                }
+            });
+        }
+
+        // Handle Google authentication response
+        async function handleGoogleAuthResponse(response) {
+            try {
+                // Show loading notification
+                showNotification('Authenticating with Google...', 'info');
+                
+                // Send Google token to backend
+                const result = await apiRequest('/auth/google', 'POST', {
+                    credential: response.credential
+                });
+                
+                // Store user data and token
+                setCurrentUser(result);
+                
+                // Show success message
+                showNotification('Google authentication successful!', 'success');
+                
+                // Close auth modal if open
+                authModal.style.display = 'none';
+                
+                // Update UI
+                updateAuthUI();
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Google authentication failed:', error);
+                showNotification('Google authentication failed. Please try again or use email signup.', 'error');
+            }
+        }
+
+        // Decode JWT token
+        function decodeJWT(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                
+                return JSON.parse(jsonPayload);
+            } catch (error) {
+                console.error('Error decoding JWT:', error);
+                return null;
+            }
+        }
+
         // ========== AUTH MODAL FUNCTIONALITY ==========
         const authModal = document.getElementById('authModal');
         let loginBtn = document.getElementById('loginBtn');
@@ -1980,7 +2102,7 @@
             if (isLoggedIn()) {
                 e.preventDefault();
                 const currentUser = getCurrentUser();
-                const displayName = currentUser.username || currentUser.name || currentUser.email.split('@')[0];
+                const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'User';
                 if (confirm(`Logout of ${displayName}?`)) {
                     logout();
                     window.location.reload();
@@ -1997,7 +2119,7 @@
             if (isLoggedIn()) {
                 e.preventDefault();
                 const currentUser = getCurrentUser();
-                const displayName = currentUser.username || currentUser.name || currentUser.email.split('@')[0];
+                const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'User';
                 if (confirm(`You're already logged in as ${displayName}. Do you want to logout?`)) {
                     logout();
                     window.location.reload();
@@ -2153,6 +2275,12 @@
             localStorage.removeItem('quantumcoin_user');
             localStorage.removeItem('quantumcoin_token');
             localStorage.setItem('quantumcoin_loggedIn', 'false');
+            
+            // Google signout if applicable
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                google.accounts.id.disableAutoSelect();
+            }
+            
             updateAuthUI();
         }
 
@@ -2628,6 +2756,9 @@
 
         // ========== INITIALIZATION ==========
         window.addEventListener('DOMContentLoaded', () => {
+            // Initialize Google Auth
+            initializeGoogleAuth();
+            
             // Check login state
             updateAuthUI();
             

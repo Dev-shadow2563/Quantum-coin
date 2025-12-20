@@ -725,6 +725,73 @@
             resize: vertical;
         }
 
+        /* Dashboard Section */
+        .dashboard {
+            padding: 100px 0;
+        }
+
+        .dashboard-welcome {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-welcome h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            background: rgba(10, 10, 31, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 15px 30px rgba(0, 240, 255, 0.2);
+        }
+
+        .dashboard-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .dashboard-stats {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-stats.positive {
+            color: var(--success);
+        }
+
+        .dashboard-stats.negative {
+            color: var(--danger);
+        }
+
+        .dashboard-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
         /* CTA Section */
         .cta {
             padding: 100px 0;
@@ -1162,6 +1229,10 @@
                 grid-template-columns: 1fr;
                 gap: 40px;
             }
+            
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -1222,6 +1293,15 @@
                 width: 100%;
                 max-width: 300px;
                 text-align: center;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-actions {
+                flex-direction: column;
+                align-items: center;
             }
         }
 
@@ -1295,6 +1375,7 @@
                     <a class="nav-link" data-page="features">Features</a>
                     <a class="nav-link" data-page="about">About</a>
                     <a class="nav-link" data-page="contact">Contact</a>
+                    <a class="nav-link" data-page="dashboard" id="dashboardLink" style="display: none;">Dashboard</a>
                 </div>
                 <div class="auth-buttons">
                     <button class="btn btn-login" id="loginBtn">Login</button>
@@ -1615,6 +1696,25 @@
         </div>
     </section>
 
+    <!-- Dashboard Page -->
+    <section id="dashboard" class="page-section">
+        <div class="container">
+            <div class="dashboard-welcome">
+                <h2 id="dashboardWelcome">Welcome to Your Dashboard</h2>
+                <p>Manage your crypto portfolio and track your investments</p>
+            </div>
+            
+            <div class="dashboard-grid" id="dashboardStats">
+                <!-- Dynamic dashboard stats will be loaded here -->
+            </div>
+            
+            <div class="dashboard-actions">
+                <button class="btn btn-signup" id="tradeNowBtn">Start Trading</button>
+                <button class="btn btn-login" id="logoutDashboardBtn">Logout</button>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer>
         <div class="container">
@@ -1754,6 +1854,7 @@
         const pageSections = document.querySelectorAll('.page-section');
         const navLinks = document.querySelectorAll('.nav-link');
         const homeLink = document.getElementById('homeLink');
+        const dashboardLink = document.getElementById('dashboardLink');
 
         function showPage(pageId) {
             // Hide all pages
@@ -1802,6 +1903,8 @@
         const loginError = document.getElementById('loginError');
         const registerError = document.getElementById('registerError');
         const registerSuccess = document.getElementById('registerSuccess');
+        const logoutDashboardBtn = document.getElementById('logoutDashboardBtn');
+        const tradeNowBtn = document.getElementById('tradeNowBtn');
 
         // Open modal with login form
         loginBtn.addEventListener('click', function(e) {
@@ -1841,10 +1944,7 @@
         startTradingBtn.addEventListener('click', (e) => {
             if (isLoggedIn()) {
                 e.preventDefault();
-                showNotification('Redirecting to dashboard...', 'info');
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+                showDashboard();
             } else {
                 authModal.style.display = 'block';
                 switchTab('signup');
@@ -1854,15 +1954,32 @@
         ctaSignupBtn.addEventListener('click', (e) => {
             if (isLoggedIn()) {
                 e.preventDefault();
-                showNotification('Redirecting to dashboard...', 'info');
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+                showDashboard();
             } else {
                 authModal.style.display = 'block';
                 switchTab('signup');
             }
         });
+
+        // Trade Now button in dashboard
+        if (tradeNowBtn) {
+            tradeNowBtn.addEventListener('click', () => {
+                showNotification('Redirecting to trading platform...', 'info');
+                setTimeout(() => {
+                    showPage('market');
+                }, 1000);
+            });
+        }
+
+        // Logout button in dashboard
+        if (logoutDashboardBtn) {
+            logoutDashboardBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to logout?')) {
+                    logout();
+                    window.location.reload();
+                }
+            });
+        }
 
         // Close modal
         closeModal.addEventListener('click', () => {
@@ -2039,13 +2156,10 @@
                 saveUser(existingUser);
                 setCurrentUser(existingUser);
                 
-                showNotification(`Welcome back ${existingUser.username || existingUser.fullName}! Redirecting to dashboard...`, 'success');
+                showNotification(`Welcome back ${existingUser.username || existingUser.fullName}!`, 'success');
                 authModal.style.display = 'none';
                 updateAuthUI();
-                
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
+                showDashboard();
             } else {
                 const username = generateUsernameFromEmail(googleUser.email);
                 
@@ -2075,13 +2189,10 @@
                 saveUser(user);
                 setCurrentUser(user);
                 
-                showNotification(`Welcome ${user.username}! Your account has been created. Redirecting to dashboard...`, 'success');
+                showNotification(`Welcome ${user.username}! Your account has been created.`, 'success');
                 authModal.style.display = 'none';
                 updateAuthUI();
-                
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1500);
+                showDashboard();
             }
         }
 
@@ -2189,6 +2300,7 @@
                     loginBtn.innerHTML = `<i class="fas fa-user"></i> ${displayName}`;
                     loginBtn.classList.add('logged-in');
                     signupBtn.style.display = 'none';
+                    dashboardLink.style.display = 'block';
                     
                     // Remove all existing click listeners first
                     const newLoginBtn = loginBtn.cloneNode(true);
@@ -2209,6 +2321,7 @@
                 loginBtn.innerHTML = 'Login';
                 loginBtn.classList.remove('logged-in');
                 signupBtn.style.display = 'block';
+                dashboardLink.style.display = 'none';
                 
                 // Remove all existing click listeners first
                 const newLoginBtn = loginBtn.cloneNode(true);
@@ -2255,6 +2368,55 @@
             });
         }
 
+        // Show dashboard function
+        function showDashboard() {
+            if (!isLoggedIn()) {
+                showNotification('Please login first to access the dashboard.', 'error');
+                authModal.style.display = 'block';
+                switchTab('login');
+                return;
+            }
+            
+            const currentUser = getCurrentUser();
+            const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+            
+            // Update welcome message
+            document.getElementById('dashboardWelcome').textContent = `Welcome, ${displayName}!`;
+            
+            // Update dashboard stats
+            const dashboardStats = document.getElementById('dashboardStats');
+            if (dashboardStats) {
+                const isPositive = currentUser.profitLoss >= 0;
+                dashboardStats.innerHTML = `
+                    <div class="dashboard-card">
+                        <h3>Portfolio Value</h3>
+                        <div class="dashboard-stats">$${currentUser.portfolioValue.toFixed(2)}</div>
+                        <p>Total value of all your holdings</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Total Invested</h3>
+                        <div class="dashboard-stats">$${currentUser.totalInvested.toFixed(2)}</div>
+                        <p>Amount you've invested</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Profit/Loss</h3>
+                        <div class="dashboard-stats ${isPositive ? 'positive' : 'negative'}">
+                            ${isPositive ? '+' : ''}$${currentUser.profitLoss.toFixed(2)}
+                        </div>
+                        <p>Your total returns</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Available Balance</h3>
+                        <div class="dashboard-stats">$${currentUser.balance.toFixed(2)}</div>
+                        <p>Ready to invest</p>
+                    </div>
+                `;
+            }
+            
+            // Show dashboard
+            showPage('dashboard');
+        }
+
         // ========== FORM SUBMISSION HANDLERS ==========
         // Login form submission
         document.getElementById('loginForm').addEventListener('submit', (e) => {
@@ -2280,13 +2442,10 @@
                     saveUser(user);
                     setCurrentUser(user);
                     
-                    showNotification('Login successful! Redirecting to dashboard...', 'success');
+                    showNotification('Login successful!', 'success');
                     authModal.style.display = 'none';
                     updateAuthUI();
-                    
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
+                    showDashboard();
                 } else {
                     loginError.textContent = 'Invalid password. Please try again.';
                     loginError.style.display = 'block';
@@ -2361,15 +2520,12 @@
             saveUser(user);
             setCurrentUser(user);
             
-            showNotification(`Account created successfully! Welcome ${username}. Redirecting to dashboard...`, 'success');
+            showNotification(`Account created successfully! Welcome ${username}.`, 'success');
             
             // Show success message and switch to login
             authModal.style.display = 'none';
             updateAuthUI();
-            
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1000);
+            showDashboard();
         });
 
         // Contact form submission

@@ -1952,8 +1952,8 @@
                 if (response.status === 401) {
                     localStorage.removeItem('quantumcoin_token');
                     localStorage.removeItem('quantumcoin_user');
+                    localStorage.setItem('quantumcoin_loggedIn', 'false');
                     showNotification('Session expired. Please login again.', 'error');
-                    // Instead of redirecting, show login modal
                     authModal.style.display = 'block';
                     switchTab('login');
                     return null;
@@ -1977,80 +1977,105 @@
         
         // Initialize Google Identity Services
         function initializeGoogleAuth() {
-            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleGoogleAuthResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: true,
-                    context: 'signin'
-                });
+            try {
+                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                    console.log('Initializing Google OAuth...');
+                    
+                    google.accounts.id.initialize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        callback: handleGoogleAuthResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true,
+                        context: 'signin',
+                        ux_mode: 'popup'
+                    });
 
-                renderGoogleSignInButtons();
-            } else {
-                console.error('Google Identity Services not loaded');
-                showNotification('Google authentication is currently unavailable. Please try email signup.', 'error');
+                    // Render buttons with proper initialization
+                    setTimeout(() => {
+                        renderGoogleSignInButtons();
+                    }, 1000);
+                    
+                    // Optional: Show One Tap prompt
+                    google.accounts.id.prompt((notification) => {
+                        console.log('One Tap prompt:', notification);
+                    });
+                } else {
+                    console.error('Google Identity Services not loaded');
+                    // Hide Google buttons if library fails to load
+                    document.getElementById('google-signin-container').style.display = 'none';
+                    document.getElementById('google-signup-container').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Google auth initialization error:', error);
             }
         }
 
         // Render Google Sign-In buttons
         function renderGoogleSignInButtons() {
-            const loginContainer = document.getElementById('google-signin-container');
-            const signupContainer = document.getElementById('google-signup-container');
-            
-            if (loginContainer) {
-                google.accounts.id.renderButton(
-                    loginContainer,
-                    {
-                        type: 'standard',
-                        theme: 'outline',
-                        size: 'large',
-                        text: 'continue_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                        width: '100%'
+            try {
+                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                    const loginContainer = document.getElementById('google-signin-container');
+                    const signupContainer = document.getElementById('google-signup-container');
+                    
+                    if (loginContainer) {
+                        google.accounts.id.renderButton(
+                            loginContainer,
+                            {
+                                type: 'standard',
+                                theme: 'outline',
+                                size: 'large',
+                                text: 'continue_with',
+                                shape: 'rectangular',
+                                logo_alignment: 'left',
+                                width: '100%'
+                            }
+                        );
                     }
-                );
-            }
-            
-            if (signupContainer) {
-                google.accounts.id.renderButton(
-                    signupContainer,
-                    {
-                        type: 'standard',
-                        theme: 'outline',
-                        size: 'large',
-                        text: 'signup_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                        width: '100%'
+                    
+                    if (signupContainer) {
+                        google.accounts.id.renderButton(
+                            signupContainer,
+                            {
+                                type: 'standard',
+                                theme: 'outline',
+                                size: 'large',
+                                text: 'signup_with',
+                                shape: 'rectangular',
+                                logo_alignment: 'left',
+                                width: '100%'
+                            }
+                        );
                     }
-                );
-            }
-            
-            // Optional: Show the One Tap dialog
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // Continue with other authentication methods
+                    
+                    console.log('Google buttons rendered successfully');
                 }
-            });
+            } catch (error) {
+                console.error('Failed to render Google buttons:', error);
+            }
         }
 
         // Handle Google authentication response
         async function handleGoogleAuthResponse(response) {
             try {
-                // Show loading notification
                 showNotification('Authenticating with Google...', 'info');
+                console.log('Google auth response received');
                 
                 // Send Google token to backend
                 const result = await apiRequest('/auth/google', 'POST', {
                     credential: response.credential
                 });
                 
+                if (!result) {
+                    throw new Error('No response from server');
+                }
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
                 // Store user data and token
                 setCurrentUser(result);
                 
-                // Show success message
                 showNotification('Google authentication successful!', 'success');
                 
                 // Close auth modal if open
@@ -2066,7 +2091,12 @@
                 
             } catch (error) {
                 console.error('Google authentication failed:', error);
-                showNotification('Google authentication failed. Please try again or use email signup.', 'error');
+                showNotification(`Google login failed: ${error.message}`, 'error');
+                
+                // Clear any Google session on error
+                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                    google.accounts.id.revoke();
+                }
             }
         }
 
@@ -2287,6 +2317,7 @@
             // Google signout if applicable
             if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
                 google.accounts.id.disableAutoSelect();
+                google.accounts.id.revoke();
             }
             
             updateAuthUI();

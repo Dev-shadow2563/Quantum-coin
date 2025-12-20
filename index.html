@@ -1215,6 +1215,22 @@
             }
         }
 
+        /* Loading Spinner */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 240, 255, 0.2);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
             .hero h1 {
@@ -1787,21 +1803,21 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter your username" required>
+                    <label for="loginUsername">Username or Email</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter your username or email" required>
                 </div>
                 <div class="form-group">
                     <label for="loginPassword">Password</label>
                     <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
                 </div>
                 
-                <!-- Google Sign In Button -->
-                <div id="google-signin-container"></div>
-                
                 <div class="divider">
                     <span>or</span>
                 </div>
-                <button type="submit" class="auth-submit">Login to Your Account</button>
+                <button type="submit" class="auth-submit" id="loginSubmitBtn">
+                    <span>Login to Your Account</span>
+                    <div class="loading-spinner" style="display: none; margin: 0 auto;"></div>
+                </button>
                 <div class="auth-footer">
                     <p>Don't have an account? <a href="#" id="switchToSignup">Sign up</a></p>
                 </div>
@@ -1835,13 +1851,13 @@
                     <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password" required>
                 </div>
                 
-                <!-- Google Sign Up Button -->
-                <div id="google-signup-container"></div>
-                
                 <div class="divider">
                     <span>or</span>
                 </div>
-                <button type="submit" class="auth-submit">Create Your Account</button>
+                <button type="submit" class="auth-submit" id="signupSubmitBtn">
+                    <span>Create Your Account</span>
+                    <div class="loading-spinner" style="display: none; margin: 0 auto;"></div>
+                </button>
                 <div class="auth-footer">
                     <p>Already have an account? <a href="#" id="switchToLogin">Login</a></p>
                 </div>
@@ -1887,6 +1903,57 @@
             showPage('home');
         });
 
+        // ========== BACKEND API CONFIGURATION ==========
+        const API_BASE_URL = 'https://quantum-coin-backend.onrender.com/api';
+        
+        // API Helper Functions
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            
+            // Add token to headers if user is logged in
+            const token = localStorage.getItem('quantumcoin_token');
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            const options = {
+                method,
+                headers,
+                credentials: 'include'
+            };
+            
+            if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(url, options);
+                
+                // Handle unauthorized (401) responses
+                if (response.status === 401) {
+                    localStorage.removeItem('quantumcoin_token');
+                    localStorage.removeItem('quantumcoin_user');
+                    showNotification('Session expired. Please login again.', 'error');
+                    window.location.href = '/';
+                    return null;
+                }
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || result.message || 'Request failed');
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('API request failed:', error);
+                throw error;
+            }
+        }
+
         // ========== AUTH MODAL FUNCTIONALITY ==========
         const authModal = document.getElementById('authModal');
         let loginBtn = document.getElementById('loginBtn');
@@ -1905,13 +1972,15 @@
         const registerSuccess = document.getElementById('registerSuccess');
         const logoutDashboardBtn = document.getElementById('logoutDashboardBtn');
         const tradeNowBtn = document.getElementById('tradeNowBtn');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const signupSubmitBtn = document.getElementById('signupSubmitBtn');
 
         // Open modal with login form
         loginBtn.addEventListener('click', function(e) {
             if (isLoggedIn()) {
                 e.preventDefault();
                 const currentUser = getCurrentUser();
-                const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                const displayName = currentUser.username || currentUser.name || currentUser.email.split('@')[0];
                 if (confirm(`Logout of ${displayName}?`)) {
                     logout();
                     window.location.reload();
@@ -1928,7 +1997,7 @@
             if (isLoggedIn()) {
                 e.preventDefault();
                 const currentUser = getCurrentUser();
-                const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                const displayName = currentUser.username || currentUser.name || currentUser.email.split('@')[0];
                 if (confirm(`You're already logged in as ${displayName}. Do you want to logout?`)) {
                     logout();
                     window.location.reload();
@@ -1942,9 +2011,10 @@
 
         // Open modal from "Start Trading" buttons
         startTradingBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             if (isLoggedIn()) {
-                e.preventDefault();
-                showDashboard();
+                // Redirect to dashboard.html if logged in
+                window.location.href = 'dashboard.html';
             } else {
                 authModal.style.display = 'block';
                 switchTab('signup');
@@ -1952,9 +2022,10 @@
         });
 
         ctaSignupBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             if (isLoggedIn()) {
-                e.preventDefault();
-                showDashboard();
+                // Redirect to dashboard.html if logged in
+                window.location.href = 'dashboard.html';
             } else {
                 authModal.style.display = 'block';
                 switchTab('signup');
@@ -1964,10 +2035,12 @@
         // Trade Now button in dashboard
         if (tradeNowBtn) {
             tradeNowBtn.addEventListener('click', () => {
-                showNotification('Redirecting to trading platform...', 'info');
-                setTimeout(() => {
-                    showPage('market');
-                }, 1000);
+                if (isLoggedIn()) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    authModal.style.display = 'block';
+                    switchTab('login');
+                }
             });
         }
 
@@ -2047,244 +2120,40 @@
             signupUsername.value = username;
         });
 
-        // ========== GOOGLE AUTHENTICATION CONFIG ==========
-        const GOOGLE_CLIENT_ID = '960526558312-71hbbd2t528lu2sstpg0sn0vs1t9vek3.apps.googleusercontent.com';
-
-        // Initialize Google Identity Services
-        function initializeGoogleAuth() {
-            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleGoogleAuthResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: true,
-                    context: 'signin'
-                });
-
-                renderGoogleSignInButtons();
-            } else {
-                console.error('Google Identity Services not loaded');
-                showNotification('Google authentication is currently unavailable. Please try email signup.', 'error');
-            }
-        }
-
-        // Render Google Sign-In buttons
-        function renderGoogleSignInButtons() {
-            const loginContainer = document.getElementById('google-signin-container');
-            const signupContainer = document.getElementById('google-signup-container');
-            
-            if (loginContainer) {
-                google.accounts.id.renderButton(
-                    loginContainer,
-                    {
-                        type: 'standard',
-                        theme: 'outline',
-                        size: 'large',
-                        text: 'continue_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                        width: '100%'
-                    }
-                );
-            }
-            
-            if (signupContainer) {
-                google.accounts.id.renderButton(
-                    signupContainer,
-                    {
-                        type: 'standard',
-                        theme: 'outline',
-                        size: 'large',
-                        text: 'signup_with',
-                        shape: 'rectangular',
-                        logo_alignment: 'left',
-                        width: '100%'
-                    }
-                );
-            }
-            
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // Continue with another identity provider
-                }
-            });
-        }
-
-        // Handle Google authentication response
-        function handleGoogleAuthResponse(response) {
-            const responsePayload = decodeJWT(response.credential);
-            
-            if (responsePayload) {
-                const googleUser = {
-                    googleId: responsePayload.sub,
-                    email: responsePayload.email,
-                    username: responsePayload.name || responsePayload.email.split('@')[0],
-                    fullName: responsePayload.name,
-                    profilePicture: responsePayload.picture,
-                    emailVerified: responsePayload.email_verified
-                };
-                
-                processGoogleUser(googleUser);
-            } else {
-                showNotification('Failed to authenticate with Google. Please try again.', 'error');
-            }
-        }
-
-        // Decode JWT token
-        function decodeJWT(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                
-                return JSON.parse(jsonPayload);
-            } catch (error) {
-                console.error('Error decoding JWT:', error);
-                return null;
-            }
-        }
-
-        // Process Google user data
-        function processGoogleUser(googleUser) {
-            const existingUser = findUserByGoogleId(googleUser.googleId) || findUserByEmail(googleUser.email);
-            
-            if (existingUser) {
-                existingUser.lastLogin = new Date().toISOString();
-                existingUser.profilePicture = googleUser.profilePicture;
-                saveUser(existingUser);
-                setCurrentUser(existingUser);
-                
-                showNotification(`Welcome back ${existingUser.username || existingUser.fullName}!`, 'success');
-                authModal.style.display = 'none';
-                updateAuthUI();
-                showDashboard();
-            } else {
-                const username = generateUsernameFromEmail(googleUser.email);
-                
-                const user = {
-                    id: generateUserId(),
-                    googleId: googleUser.googleId,
-                    username: username,
-                    email: googleUser.email,
-                    fullName: googleUser.fullName,
-                    authMethod: 'google',
-                    joinDate: new Date().toISOString(),
-                    lastLogin: new Date().toISOString(),
-                    profilePicture: googleUser.profilePicture,
-                    emailVerified: googleUser.emailVerified,
-                    portfolio: createDefaultPortfolio(),
-                    portfolioValue: 5000 + Math.random() * 15000,
-                    totalInvested: 3000 + Math.random() * 7000,
-                    profitLoss: (Math.random() * 3000) - 800,
-                    balance: 2000 + Math.random() * 8000,
-                    settings: {
-                        theme: 'dark',
-                        notifications: true,
-                        twoFactorAuth: false
-                    }
-                };
-                
-                saveUser(user);
-                setCurrentUser(user);
-                
-                showNotification(`Welcome ${user.username}! Your account has been created.`, 'success');
-                authModal.style.display = 'none';
-                updateAuthUI();
-                showDashboard();
-            }
-        }
-
-        // Generate username from email
-        function generateUsernameFromEmail(email) {
-            const baseUsername = email.split('@')[0];
-            const cleanUsername = baseUsername.replace(/[^a-zA-Z0-9]/g, '');
-            let username = cleanUsername;
-            let counter = 1;
-            
-            while (findUserByUsername(username)) {
-                username = `${cleanUsername}${counter}`;
-                counter++;
-            }
-            
-            return username;
-        }
-
         // ========== USER MANAGEMENT SYSTEM ==========
-        if (!localStorage.getItem('quantumcoin_users')) {
-            localStorage.setItem('quantumcoin_users', JSON.stringify([]));
-        }
-
-        function getAllUsers() {
-            return JSON.parse(localStorage.getItem('quantumcoin_users') || '[]');
-        }
-
-        function saveUser(user) {
-            const users = getAllUsers();
-            const existingUserIndex = users.findIndex(u => u.email === user.email);
-            if (existingUserIndex !== -1) {
-                users[existingUserIndex] = user;
-            } else {
-                users.push(user);
-            }
-            
-            localStorage.setItem('quantumcoin_users', JSON.stringify(users));
-            return user;
-        }
-
-        function findUserByEmail(email) {
-            const users = getAllUsers();
-            return users.find(user => user.email === email);
-        }
-
-        function findUserByGoogleId(googleId) {
-            const users = getAllUsers();
-            return users.find(user => user.googleId === googleId);
-        }
-
-        function findUserByUsername(username) {
-            const users = getAllUsers();
-            return users.find(user => user.username === username);
-        }
-
-        function setCurrentUser(user) {
-            localStorage.setItem('quantumcoin_currentUser', JSON.stringify(user));
+        function setCurrentUser(userData) {
+            localStorage.setItem('quantumcoin_user', JSON.stringify(userData.user || userData));
+            localStorage.setItem('quantumcoin_token', userData.token);
             localStorage.setItem('quantumcoin_loggedIn', 'true');
         }
 
         function getCurrentUser() {
-            return JSON.parse(localStorage.getItem('quantumcoin_currentUser') || 'null');
+            const userStr = localStorage.getItem('quantumcoin_user');
+            if (!userStr) return null;
+            
+            try {
+                return JSON.parse(userStr);
+            } catch (e) {
+                return null;
+            }
         }
 
         function isLoggedIn() {
-            return localStorage.getItem('quantumcoin_loggedIn') === 'true';
+            return localStorage.getItem('quantumcoin_loggedIn') === 'true' && 
+                   localStorage.getItem('quantumcoin_token') !== null;
         }
 
         function logout() {
-            const currentUser = getCurrentUser();
-            if (currentUser && currentUser.authMethod === 'google') {
-                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                    google.accounts.id.disableAutoSelect();
-                }
-            }
+            // Call logout API
+            apiRequest('/auth/logout', 'POST').catch(() => {
+                // Silently fail if API call fails
+            });
             
-            localStorage.removeItem('quantumcoin_currentUser');
+            // Clear local storage
+            localStorage.removeItem('quantumcoin_user');
+            localStorage.removeItem('quantumcoin_token');
             localStorage.setItem('quantumcoin_loggedIn', 'false');
             updateAuthUI();
-        }
-
-        function createDefaultPortfolio() {
-            return [
-                { coin: 'BTC', symbol: 'Bitcoin', amount: 0.05, value: 2162.54, icon: '₿', color: '#f7931a' },
-                { coin: 'ETH', symbol: 'Ethereum', amount: 0.3, value: 960.45, icon: 'Ξ', color: '#7b2cbf' },
-                { coin: 'DOGE', symbol: 'Dogecoin', amount: 5000, value: 445.00, icon: 'Đ', color: '#ff00c8' },
-                { coin: 'SHIB', symbol: 'Shiba Inu', amount: 5000000, value: 43.80, icon: 'S', color: '#00f0ff' }
-            ];
-        }
-
-        function generateUserId() {
-            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
         function isValidEmail(email) {
@@ -2296,7 +2165,7 @@
             if (isLoggedIn()) {
                 const currentUser = getCurrentUser();
                 if (currentUser) {
-                    const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                    const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'User';
                     loginBtn.innerHTML = `<i class="fas fa-user"></i> ${displayName}`;
                     loginBtn.classList.add('logged-in');
                     signupBtn.style.display = 'none';
@@ -2333,7 +2202,7 @@
                     if (isLoggedIn()) {
                         e.preventDefault();
                         const currentUser = getCurrentUser();
-                        const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                        const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'User';
                         if (confirm(`Logout of ${displayName}?`)) {
                             logout();
                             window.location.reload();
@@ -2355,7 +2224,7 @@
                 if (isLoggedIn()) {
                     e.preventDefault();
                     const currentUser = getCurrentUser();
-                    const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+                    const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'User';
                     if (confirm(`You're already logged in as ${displayName}. Do you want to logout?`)) {
                         logout();
                         window.location.reload();
@@ -2378,37 +2247,42 @@
             }
             
             const currentUser = getCurrentUser();
-            const displayName = currentUser.username || currentUser.fullName || currentUser.email.split('@')[0];
+            const displayName = currentUser.username || currentUser.name || currentUser.email?.split('@')[0] || 'Trader';
             
             // Update welcome message
             document.getElementById('dashboardWelcome').textContent = `Welcome, ${displayName}!`;
             
             // Update dashboard stats
             const dashboardStats = document.getElementById('dashboardStats');
-            if (dashboardStats) {
-                const isPositive = currentUser.profitLoss >= 0;
+            if (dashboardStats && currentUser) {
+                const balance = currentUser.funding_balance || currentUser.balance || 0;
+                const demoBalance = currentUser.demo_balance || 100000;
+                const portfolioValue = currentUser.portfolioValue || balance * 1.5;
+                const profitLoss = currentUser.profitLoss || (portfolioValue - balance);
+                const isPositive = profitLoss >= 0;
+                
                 dashboardStats.innerHTML = `
                     <div class="dashboard-card">
-                        <h3>Portfolio Value</h3>
-                        <div class="dashboard-stats">$${currentUser.portfolioValue.toFixed(2)}</div>
-                        <p>Total value of all your holdings</p>
+                        <h3>Funding Account</h3>
+                        <div class="dashboard-stats">$${balance.toFixed(2)}</div>
+                        <p>Available for trading</p>
                     </div>
                     <div class="dashboard-card">
-                        <h3>Total Invested</h3>
-                        <div class="dashboard-stats">$${currentUser.totalInvested.toFixed(2)}</div>
-                        <p>Amount you've invested</p>
+                        <h3>Demo Account</h3>
+                        <div class="dashboard-stats">$${demoBalance.toFixed(2)}</div>
+                        <p>Practice trading</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <h3>Portfolio Value</h3>
+                        <div class="dashboard-stats">$${portfolioValue.toFixed(2)}</div>
+                        <p>Total holdings value</p>
                     </div>
                     <div class="dashboard-card">
                         <h3>Profit/Loss</h3>
                         <div class="dashboard-stats ${isPositive ? 'positive' : 'negative'}">
-                            ${isPositive ? '+' : ''}$${currentUser.profitLoss.toFixed(2)}
+                            ${isPositive ? '+' : ''}$${Math.abs(profitLoss).toFixed(2)}
                         </div>
                         <p>Your total returns</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Available Balance</h3>
-                        <div class="dashboard-stats">$${currentUser.balance.toFixed(2)}</div>
-                        <p>Ready to invest</p>
                     </div>
                 `;
             }
@@ -2419,45 +2293,64 @@
 
         // ========== FORM SUBMISSION HANDLERS ==========
         // Login form submission
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const username = document.getElementById('loginUsername').value;
+            const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             
             loginError.style.display = 'none';
             
-            // Find user by username or email
-            const users = getAllUsers();
-            const user = users.find(u => u.username === username || u.email === username);
+            // Validate inputs
+            if (!username || !password) {
+                loginError.textContent = 'Please fill in all fields.';
+                loginError.style.display = 'block';
+                return;
+            }
             
-            if (user) {
-                if (user.authMethod === 'google') {
-                    showNotification('This account uses Google authentication. Please use the Google Sign-In button.', 'error');
-                    return;
-                }
+            try {
+                // Show loading state
+                const submitText = loginSubmitBtn.querySelector('span');
+                const spinner = loginSubmitBtn.querySelector('.loading-spinner');
+                submitText.style.display = 'none';
+                spinner.style.display = 'block';
+                loginSubmitBtn.disabled = true;
                 
-                if (user.password === password) {
-                    user.lastLogin = new Date().toISOString();
-                    saveUser(user);
-                    setCurrentUser(user);
-                    
-                    showNotification('Login successful!', 'success');
-                    authModal.style.display = 'none';
-                    updateAuthUI();
-                    showDashboard();
-                } else {
-                    loginError.textContent = 'Invalid password. Please try again.';
-                    loginError.style.display = 'block';
-                }
-            } else {
-                loginError.textContent = 'No account found with this username/email. Please sign up first.';
+                // Call login API
+                const result = await apiRequest('/auth/login', 'POST', {
+                    username: username,
+                    password: password
+                });
+                
+                // Store user data and token
+                setCurrentUser(result);
+                
+                // Hide modal and show success message
+                authModal.style.display = 'none';
+                showNotification('Login successful! Welcome back.', 'success');
+                updateAuthUI();
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+                
+            } catch (error) {
+                // Hide loading state
+                const submitText = loginSubmitBtn.querySelector('span');
+                const spinner = loginSubmitBtn.querySelector('.loading-spinner');
+                submitText.style.display = 'block';
+                spinner.style.display = 'none';
+                loginSubmitBtn.disabled = false;
+                
+                // Show error message
+                loginError.textContent = error.message || 'Login failed. Please check your credentials.';
                 loginError.style.display = 'block';
             }
         });
 
         // Register form submission
-        document.getElementById('signupForm').addEventListener('submit', (e) => {
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const username = document.getElementById('signupUsername').value.trim();
@@ -2466,6 +2359,13 @@
             const confirmPassword = document.getElementById('confirmPassword').value;
             
             registerError.style.display = 'none';
+            
+            // Validate inputs
+            if (!username || !email || !password || !confirmPassword) {
+                registerError.textContent = 'Please fill in all fields.';
+                registerError.style.display = 'block';
+                return;
+            }
             
             if (password !== confirmPassword) {
                 registerError.textContent = 'Passwords do not match!';
@@ -2485,47 +2385,46 @@
                 return;
             }
             
-            if (findUserByEmail(email)) {
-                registerError.textContent = 'An account with this email already exists. Please login instead.';
+            try {
+                // Show loading state
+                const submitText = signupSubmitBtn.querySelector('span');
+                const spinner = signupSubmitBtn.querySelector('.loading-spinner');
+                submitText.style.display = 'none';
+                spinner.style.display = 'block';
+                signupSubmitBtn.disabled = true;
+                
+                // Call register API
+                const result = await apiRequest('/auth/register', 'POST', {
+                    username: username,
+                    email: email,
+                    password: password
+                });
+                
+                // Store user data and token
+                setCurrentUser(result);
+                
+                // Hide modal and show success message
+                authModal.style.display = 'none';
+                showNotification('Account created successfully! Welcome to QuantumCoin.', 'success');
+                updateAuthUI();
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+                
+            } catch (error) {
+                // Hide loading state
+                const submitText = signupSubmitBtn.querySelector('span');
+                const spinner = signupSubmitBtn.querySelector('.loading-spinner');
+                submitText.style.display = 'block';
+                spinner.style.display = 'none';
+                signupSubmitBtn.disabled = false;
+                
+                // Show error message
+                registerError.textContent = error.message || 'Registration failed. Please try again.';
                 registerError.style.display = 'block';
-                return;
             }
-            
-            if (findUserByUsername(username)) {
-                registerError.textContent = 'This username is already taken. Please choose another one.';
-                registerError.style.display = 'block';
-                return;
-            }
-            
-            const user = {
-                id: generateUserId(),
-                username: username,
-                email: email,
-                password: password,
-                authMethod: 'email',
-                joinDate: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                portfolio: createDefaultPortfolio(),
-                portfolioValue: 2500 + Math.random() * 10000,
-                totalInvested: 1500 + Math.random() * 5000,
-                profitLoss: (Math.random() * 2000) - 500,
-                balance: 1000 + Math.random() * 5000,
-                settings: {
-                    theme: 'dark',
-                    notifications: true,
-                    twoFactorAuth: false
-                }
-            };
-            
-            saveUser(user);
-            setCurrentUser(user);
-            
-            showNotification(`Account created successfully! Welcome ${username}.`, 'success');
-            
-            // Show success message and switch to login
-            authModal.style.display = 'none';
-            updateAuthUI();
-            showDashboard();
         });
 
         // Contact form submission
@@ -2729,11 +2628,14 @@
 
         // ========== INITIALIZATION ==========
         window.addEventListener('DOMContentLoaded', () => {
-            // Initialize Google Auth
-            initializeGoogleAuth();
-            
             // Check login state
             updateAuthUI();
+            
+            // Check if we should auto-redirect to dashboard
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('redirect') === 'dashboard' && isLoggedIn()) {
+                window.location.href = 'dashboard.html';
+            }
             
             // Initialize coin cards
             initializeCoinCards();

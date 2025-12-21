@@ -1946,7 +1946,13 @@
             }
             
             try {
+                console.log(`API Request: ${method} ${url}`);
                 const response = await fetch(url, options);
+                
+                // Handle network errors
+                if (!response.ok && !response.headers.get('content-type')?.includes('application/json')) {
+                    throw new Error(`Network error: ${response.status} ${response.statusText}`);
+                }
                 
                 // Handle unauthorized (401) responses
                 if (response.status === 401) {
@@ -1962,14 +1968,67 @@
                 const result = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(result.error || result.message || 'Request failed');
+                    throw new Error(result.error || result.message || `Request failed with status ${response.status}`);
                 }
                 
                 return result;
             } catch (error) {
                 console.error('API request failed:', error);
-                throw error;
+                
+                // Check if we're offline or if it's a CORS error
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    showNotification('Cannot connect to server. Please check your internet connection.', 'error');
+                    // Enable offline mode
+                    window.isOfflineMode = true;
+                } else {
+                    throw error;
+                }
+                
+                return null;
             }
+        }
+
+        // Offline mode functions
+        function simulateOfflineLogin(username, password) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const mockUser = {
+                        id: Date.now(),
+                        username: username,
+                        email: `${username}@example.com`,
+                        funding_balance: 0.00,
+                        demo_balance: 100000.00
+                    };
+                    
+                    const mockToken = `offline_token_${Date.now()}`;
+                    
+                    resolve({
+                        token: mockToken,
+                        user: mockUser
+                    });
+                }, 1000);
+            });
+        }
+
+        function simulateOfflineRegister(username, email, password) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const mockUser = {
+                        id: Date.now(),
+                        username: username,
+                        email: email,
+                        funding_balance: 0.00,
+                        demo_balance: 100000.00
+                    };
+                    
+                    const mockToken = `offline_token_${Date.now()}`;
+                    
+                    resolve({
+                        token: mockToken,
+                        user: mockUser
+                    });
+                }, 1000);
+            });
         }
 
         // ========== GOOGLE AUTHENTICATION ==========
@@ -1978,35 +2037,41 @@
         // Initialize Google Identity Services
         function initializeGoogleAuth() {
             try {
-                if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                    console.log('Initializing Google OAuth...');
-                    
-                    google.accounts.id.initialize({
-                        client_id: GOOGLE_CLIENT_ID,
-                        callback: handleGoogleAuthResponse,
-                        auto_select: false,
-                        cancel_on_tap_outside: true,
-                        context: 'signin',
-                        ux_mode: 'popup'
-                    });
-
-                    // Render buttons with proper initialization
-                    setTimeout(() => {
-                        renderGoogleSignInButtons();
-                    }, 1000);
-                    
-                    // Optional: Show One Tap prompt
-                    google.accounts.id.prompt((notification) => {
-                        console.log('One Tap prompt:', notification);
-                    });
-                } else {
-                    console.error('Google Identity Services not loaded');
-                    // Hide Google buttons if library fails to load
-                    document.getElementById('google-signin-container').style.display = 'none';
-                    document.getElementById('google-signup-container').style.display = 'none';
+                // First, check if Google library is loaded
+                if (typeof google === 'undefined') {
+                    console.warn('Google Identity Services not loaded yet, retrying...');
+                    setTimeout(initializeGoogleAuth, 1000);
+                    return;
                 }
+                
+                console.log('Initializing Google OAuth...');
+                
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleAuthResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                    context: 'signin',
+                    ux_mode: 'popup'
+                });
+
+                // Render buttons
+                setTimeout(() => {
+                    renderGoogleSignInButtons();
+                }, 500);
+                
+                // Optional: Show One Tap prompt
+                google.accounts.id.prompt((notification) => {
+                    console.log('One Tap prompt:', notification);
+                });
+                
             } catch (error) {
                 console.error('Google auth initialization error:', error);
+                // Fallback: show message or alternative login
+                document.getElementById('google-signin-container').innerHTML = 
+                    '<p class="error-message" style="text-align: center; padding: 10px; margin: 10px 0;">Google Sign-In unavailable. Please use email/password.</p>';
+                document.getElementById('google-signup-container').innerHTML = 
+                    '<p class="error-message" style="text-align: center; padding: 10px; margin: 10px 0;">Google Sign-In unavailable. Please use email/password.</p>';
             }
         }
 
@@ -2059,6 +2124,12 @@
             try {
                 showNotification('Authenticating with Google...', 'info');
                 console.log('Google auth response received');
+                
+                // Check if we're in offline mode
+                if (window.isOfflineMode) {
+                    showNotification('Cannot authenticate with Google in offline mode. Please use email/password.', 'error');
+                    return;
+                }
                 
                 // Send Google token to backend
                 const result = await apiRequest('/auth/google', 'POST', {
@@ -2304,10 +2375,12 @@
         }
 
         function logout() {
-            // Call logout API
-            apiRequest('/auth/logout', 'POST').catch(() => {
-                // Silently fail if API call fails
-            });
+            // Try to call logout API (but don't fail if offline)
+            if (!window.isOfflineMode) {
+                apiRequest('/auth/logout', 'POST').catch(() => {
+                    // Silently fail if API call fails
+                });
+            }
             
             // Clear local storage
             localStorage.removeItem('quantumcoin_user');
@@ -2429,11 +2502,22 @@
                 spinner.style.display = 'block';
                 loginSubmitBtn.disabled = true;
                 
-                // Call login API
-                const result = await apiRequest('/auth/login', 'POST', {
-                    username: username,
-                    password: password
-                });
+                let result;
+                
+                // Check if we're in offline mode
+                if (window.isOfflineMode) {
+                    result = await simulateOfflineLogin(username, password);
+                } else {
+                    // Call login API
+                    result = await apiRequest('/auth/login', 'POST', {
+                        username: username,
+                        password: password
+                    });
+                }
+                
+                if (!result) {
+                    throw new Error('Login failed. Please try again.');
+                }
                 
                 // Store user data and token
                 setCurrentUser(result);
@@ -2506,12 +2590,23 @@
                 spinner.style.display = 'block';
                 signupSubmitBtn.disabled = true;
                 
-                // Call register API
-                const result = await apiRequest('/auth/register', 'POST', {
-                    username: username,
-                    email: email,
-                    password: password
-                });
+                let result;
+                
+                // Check if we're in offline mode
+                if (window.isOfflineMode) {
+                    result = await simulateOfflineRegister(username, email, password);
+                } else {
+                    // Call register API
+                    result = await apiRequest('/auth/register', 'POST', {
+                        username: username,
+                        email: email,
+                        password: password
+                    });
+                }
+                
+                if (!result) {
+                    throw new Error('Registration failed. Please try again.');
+                }
                 
                 // Store user data and token
                 setCurrentUser(result);
@@ -2741,6 +2836,9 @@
 
         // ========== INITIALIZATION ==========
         window.addEventListener('DOMContentLoaded', () => {
+            // Check if API is available
+            checkAPIHealth();
+            
             // Initialize Google Auth
             initializeGoogleAuth();
             
@@ -2790,6 +2888,28 @@
                 observer.observe(card);
             });
         });
+
+        // API health check
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    console.warn('API health check failed');
+                    window.isOfflineMode = true;
+                    showNotification('Connected to demo mode. Some features may be limited.', 'info');
+                } else {
+                    window.isOfflineMode = false;
+                }
+            } catch (error) {
+                console.warn('API unavailable, running in offline mode');
+                window.isOfflineMode = true;
+                showNotification('Running in offline demo mode. Sign up to access full features.', 'info');
+            }
+        }
 
         // Admin access (hidden feature)
         document.addEventListener('keydown', (e) => {

@@ -6,6 +6,7 @@
     <title>QuantumCoin Dashboard | Live Crypto Trading</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
@@ -1250,7 +1251,7 @@
                 <!-- Trading View -->
                 <div class="trading-section">
                     <div class="section-header">
-                        <h2>Live Trading View - <span id="selectedCoinName">Bitcoin (BTC)</span></h2>
+                        <h2>Live Trading View - <span id="selectedCoinName">Ethereum (ETH)</span></h2>
                         <div class="timeframe-selector">
                             <button class="timeframe-btn active" data-timeframe="1h">1H</button>
                             <button class="timeframe-btn" data-timeframe="1d">1D</button>
@@ -1314,7 +1315,7 @@
                             <label for="buyCoin">Coin</label>
                             <select id="buyCoin" class="form-control">
                                 <option value="BTC">Bitcoin (BTC)</option>
-                                <option value="ETH">Ethereum (ETH)</option>
+                                <option value="ETH" selected>Ethereum (ETH)</option>
                                 <option value="DOGE">Dogecoin (DOGE)</option>
                                 <option value="SHIB">Shiba Inu (SHIB)</option>
                                 <option value="ADA">Cardano (ADA)</option>
@@ -1367,7 +1368,7 @@
                             </div>
                             <div class="summary-row">
                                 <span>You Receive</span>
-                                <span id="buyReceive">0.00000 BTC</span>
+                                <span id="buyReceive">0.00000 ETH</span>
                             </div>
                         </div>
                         
@@ -1383,7 +1384,7 @@
                             <label for="sellCoin">Coin</label>
                             <select id="sellCoin" class="form-control">
                                 <option value="BTC">Bitcoin (BTC)</option>
-                                <option value="ETH">Ethereum (ETH)</option>
+                                <option value="ETH" selected>Ethereum (ETH)</option>
                                 <option value="DOGE">Dogecoin (DOGE)</option>
                                 <option value="SHIB">Shiba Inu (SHIB)</option>
                                 <option value="ADA">Cardano (ADA)</option>
@@ -1498,7 +1499,7 @@
         let currentUser = null;
         let token = null;  // This is now a simple session token, not JWT
         let currentAccountType = 'funding';
-        let selectedCoin = 'BTC';
+        let selectedCoin = 'ETH';  // Changed to ETH by default as per screenshot
         let chartType = 'candlestick';
         let timeframe = '1h';
         let priceChart = null;
@@ -1665,8 +1666,8 @@
             updateUserDisplay();
         }
 
-async function loadMarketData() {
-    const data = await apiRequest('/market/data');
+        async function loadMarketData() {
+            const data = await apiRequest('/market/data');
             if (data) {
                 cryptoData = data;
                 initializeTradingPairs();
@@ -1981,7 +1982,7 @@ async function loadMarketData() {
             });
         }
 
-        // ========== CHART FUNCTIONS ==========
+        // ========== CHART FUNCTIONS - FIXED VERSION ==========
         async function loadChartData() {
             const data = await apiRequest(`/market/chart/${selectedCoin}/${timeframe}`);
             if (data && data.length > 0) {
@@ -1996,15 +1997,30 @@ async function loadMarketData() {
                 priceChart.destroy();
             }
             
+            // Prepare data for chart
+            const labels = chartData.map(point => new Date(point.time));
+            const prices = chartData.map(point => point.close);
+            
+            const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
+            const positiveColor = '#00ff88';
+            const negativeColor = '#ff006e';
+            
             if (chartType === 'candlestick') {
-                // Convert data for candlestick chart
+                // For candlestick chart
                 const candlestickData = chartData.map(point => ({
-                    t: new Date(point.time),
+                    x: new Date(point.time),
                     o: point.open,
                     h: point.high,
                     l: point.low,
-                    c: point.close
+                    c: point.close,
+                    s: point.close >= point.open ? positiveColor : negativeColor
                 }));
+                
+                // Register the financial controller if not already registered
+                if (Chart.controllers.candlestick === undefined) {
+                    const { CandlestickController, CandlestickElement } = window['chartjs-chart-financial'];
+                    Chart.register(CandlestickController, CandlestickElement);
+                }
                 
                 priceChart = new Chart(ctx, {
                     type: 'candlestick',
@@ -2013,8 +2029,8 @@ async function loadMarketData() {
                             label: `${selectedCoin} Price`,
                             data: candlestickData,
                             color: {
-                                up: '#00ff88',
-                                down: '#ff006e',
+                                up: positiveColor,
+                                down: negativeColor,
                                 unchanged: '#999999'
                             },
                             borderColor: 'rgba(0, 240, 255, 0.5)',
@@ -2025,7 +2041,24 @@ async function loadMarketData() {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { 
+                                display: false 
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        const point = context.raw;
+                                        return [
+                                            `Open: $${point.o.toFixed(2)}`,
+                                            `High: $${point.h.toFixed(2)}`,
+                                            `Low: $${point.l.toFixed(2)}`,
+                                            `Close: $${point.c.toFixed(2)}`
+                                        ];
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             x: {
@@ -2034,14 +2067,29 @@ async function loadMarketData() {
                                     unit: timeframe === '1h' ? 'minute' : 
                                           timeframe === '1d' ? 'hour' :
                                           timeframe === '1w' ? 'day' :
-                                          timeframe === '1m' ? 'day' : 'month'
+                                          timeframe === '1m' ? 'day' : 'month',
+                                    displayFormats: {
+                                        minute: 'HH:mm',
+                                        hour: 'HH:00',
+                                        day: 'MMM dd',
+                                        month: 'MMM yyyy'
+                                    }
                                 },
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
+                                ticks: { 
+                                    color: 'rgba(226, 250, 252, 0.7)',
+                                    maxTicksLimit: 10
+                                }
                             },
                             y: {
                                 position: 'right',
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
                                 ticks: { 
                                     color: 'rgba(226, 250, 252, 0.7)',
                                     callback: value => '$' + value.toLocaleString()
@@ -2051,13 +2099,11 @@ async function loadMarketData() {
                     }
                 });
             } else {
-                // Line chart
+                // Line chart - SIMPLIFIED VERSION THAT WORKS
                 const lineData = chartData.map(point => ({
                     x: new Date(point.time),
                     y: point.close
                 }));
-                
-                const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
                 
                 priceChart = new Chart(ctx, {
                     type: 'line',
@@ -2077,16 +2123,48 @@ async function loadMarketData() {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { 
+                                display: false 
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${selectedCoin}: $${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             x: {
                                 type: 'time',
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
+                                time: {
+                                    unit: timeframe === '1h' ? 'minute' : 
+                                          timeframe === '1d' ? 'hour' :
+                                          timeframe === '1w' ? 'day' :
+                                          timeframe === '1m' ? 'day' : 'month',
+                                    displayFormats: {
+                                        minute: 'HH:mm',
+                                        hour: 'HH:00',
+                                        day: 'MMM dd',
+                                        month: 'MMM yyyy'
+                                    }
+                                },
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
+                                ticks: { 
+                                    color: 'rgba(226, 250, 252, 0.7)',
+                                    maxTicksLimit: 10
+                                }
                             },
                             y: {
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
                                 ticks: { 
                                     color: 'rgba(226, 250, 252, 0.7)',
                                     callback: value => '$' + value.toLocaleString()

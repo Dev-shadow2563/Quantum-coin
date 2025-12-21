@@ -6,7 +6,7 @@
     <title>QuantumCoin Dashboard | Live Crypto Trading</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.3"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * {
@@ -723,6 +723,7 @@
         .portfolio-list {
             max-height: 300px;
             overflow-y: auto;
+            padding-right: 5px;
         }
 
         .portfolio-item {
@@ -871,6 +872,7 @@
         .activity-list {
             max-height: 300px;
             overflow-y: auto;
+            padding-right: 5px;
         }
 
         .activity-item {
@@ -1519,6 +1521,9 @@
             
             // Setup event listeners
             initializeEventListeners();
+            
+            // Set up periodic updates
+            setInterval(updateOnlineCountDisplay, 30000); // Update every 30 seconds
         });
 
         // ========== WEB SOCKET ==========
@@ -1526,22 +1531,46 @@
             socket = io(SOCKET_URL, {
                 auth: {
                     token: token
-                }
+                },
+                transports: ['websocket', 'polling']
             });
             
             socket.on('connect', () => {
                 updateConnectionStatus(true);
-                socket.emit('join_user', currentUser.id);
+                socket.emit('join_user', { userId: currentUser.id });
                 socket.emit('get_chat_history');
+                socket.emit('get_portfolio');
+                socket.emit('get_transactions');
+                
+                showNotification('success', 'Connected', 'Real-time updates enabled');
             });
             
             socket.on('disconnect', () => {
                 updateConnectionStatus(false);
+                showNotification('warning', 'Disconnected', 'Reconnecting...');
             });
             
             socket.on('connect_error', (error) => {
                 console.error('WebSocket connection error:', error);
                 updateConnectionStatus(false);
+            });
+            
+            socket.on('connection_established', (data) => {
+                console.log('WebSocket connection established:', data);
+            });
+            
+            // Price updates
+            socket.on('price_update', (data) => {
+                if (cryptoData[data.symbol]) {
+                    const oldPrice = cryptoData[data.symbol].price;
+                    cryptoData[data.symbol].price = parseFloat(data.price);
+                    cryptoData[data.symbol].change = parseFloat(data.change);
+                    cryptoData[data.symbol].volume = parseFloat(data.volume);
+                    
+                    updateTradingPairs();
+                    updateFormPrices(selectedCoin);
+                    updatePortfolioValues();
+                }
             });
             
             // Market updates
@@ -1562,19 +1591,49 @@
                 updateChatDisplay();
             });
             
-            // Transaction notifications
-            socket.on('transaction_approved', (data) => {
-                showNotification('success', 'Transaction Approved', 
-                    `Your ${data.type} of $${data.amount} has been approved.`);
-                loadUserData();
-                loadTransactions();
+            // Trade completion
+            socket.on('trade_completed', (data) => {
+                showNotification('success', 'Trade Completed', 
+                    `${data.type.toUpperCase()} ${data.symbol} for $${data.amount.toFixed(2)}`);
+                
+                // Update user data
+                if (data.type === 'buy') {
+                    if (currentAccountType === 'funding') {
+                        currentUser.funding_balance = data.newBalance;
+                    } else {
+                        currentUser.demo_balance = data.newBalance;
+                    }
+                } else {
+                    if (currentAccountType === 'funding') {
+                        currentUser.funding_balance = data.newBalance;
+                    } else {
+                        currentUser.demo_balance = data.newBalance;
+                    }
+                }
+                
+                localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+                updateUserDisplay();
+                
+                // Request updated portfolio and transactions
+                socket.emit('get_portfolio');
+                socket.emit('get_transactions');
             });
             
-            socket.on('transaction_rejected', (data) => {
-                showNotification('warning', 'Transaction Rejected', 
-                    `Your ${data.type} of $${data.amount} was rejected. ${data.notes || ''}`);
-                loadUserData();
-                loadTransactions();
+            socket.on('trade_error', (data) => {
+                showNotification('danger', 'Trade Error', data.error);
+            });
+            
+            // Portfolio updates
+            socket.on('portfolio_update', (portfolio) => {
+                userPortfolio = portfolio;
+                updatePortfolioDisplay();
+            });
+            
+            // Transaction updates
+            socket.on('transactions_update', (transactions) => {
+                userTransactions = transactions;
+                updateTransactionsDisplay();
+                updateActivityDisplay();
             });
             
             // Balance updates
@@ -1588,6 +1647,11 @@
                     document.getElementById('demoBalance').textContent = `$${data.demo_balance.toFixed(2)}`;
                 }
                 localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+            });
+            
+            // Online count updates
+            socket.on('online_count_update', (count) => {
+                updateOnlineCountDisplay(count);
             });
         }
 
@@ -1640,8 +1704,12 @@
 
         // ========== DATA LOADING ==========
         async function loadUserData() {
-            // User data is already in localStorage from login
-            updateUserDisplay();
+            const data = await apiRequest('/user');
+            if (data) {
+                currentUser = { ...currentUser, ...data };
+                localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+                updateUserDisplay();
+            }
         }
 
         async function loadMarketData() {
@@ -1668,6 +1736,12 @@
                 userTransactions = data;
                 updateTransactionsDisplay();
                 updateActivityDisplay();
+                
+                // Show notification if this was triggered by history button
+                if (window.historyButtonClicked) {
+                    showNotification('success', 'History Loaded', 'Transaction history has been updated');
+                    window.historyButtonClicked = false;
+                }
             }
         }
 
@@ -1682,8 +1756,8 @@
             document.getElementById('usernameDisplay').textContent = currentUser.username;
             document.getElementById('greetingName').textContent = currentUser.username;
             document.getElementById('userEmail').textContent = currentUser.email || 'Premium Trader';
-            document.getElementById('fundingBalance').textContent = `$${currentUser.funding_balance?.toFixed(2) || '0.00'}`;
-            document.getElementById('demoBalance').textContent = `$${currentUser.demo_balance?.toFixed(2) || '0.00'}`;
+            document.getElementById('fundingBalance').textContent = `$${(currentUser.funding_balance || 0).toFixed(2)}`;
+            document.getElementById('demoBalance').textContent = `$${(currentUser.demo_balance || 0).toFixed(2)}`;
             
             const avatar = document.getElementById('userAvatar');
             const initials = currentUser.username.substring(0, 2).toUpperCase();
@@ -1817,14 +1891,21 @@
                 return;
             }
             
+            let totalValue = 0;
+            let totalCost = 0;
+            
             userPortfolio.forEach(item => {
                 const coinData = cryptoData[item.coin_symbol];
                 if (!coinData) return;
                 
                 const currentValue = item.amount * coinData.price;
-                const profitLoss = currentValue - (item.amount * item.purchase_price);
-                const profitLossPercent = (profitLoss / (item.amount * item.purchase_price)) * 100;
+                const cost = item.amount * item.purchase_price;
+                const profitLoss = currentValue - cost;
+                const profitLossPercent = cost > 0 ? (profitLoss / cost) * 100 : 0;
                 const isPositive = profitLoss >= 0;
+                
+                totalValue += currentValue;
+                totalCost += cost;
                 
                 const portfolioItem = document.createElement('div');
                 portfolioItem.className = 'portfolio-item';
@@ -1844,11 +1925,16 @@
                 `;
                 container.appendChild(portfolioItem);
             });
+            
+            // Update portfolio total change
+            const portfolioChange = totalCost > 0 ? ((totalValue - totalCost) / totalCost) * 100 : 0;
+            const portfolioChangeElement = document.getElementById('portfolioChange');
+            portfolioChangeElement.textContent = `${portfolioChange >= 0 ? '+' : ''}${portfolioChange.toFixed(2)}%`;
+            portfolioChangeElement.className = portfolioChange >= 0 ? 'positive' : 'negative';
         }
 
         function updatePortfolioValues() {
-            // This would calculate total portfolio value
-            // Implement as needed
+            updatePortfolioDisplay();
         }
 
         function updateTransactionsDisplay() {
@@ -1858,13 +1944,63 @@
             const pendingTransactions = userTransactions.filter(t => t.status === 'pending');
             
             if (pendingTransactions.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: rgba(226, 250, 252, 0.5); padding: 20px;">No pending transactions</div>';
+                const recentTransactions = userTransactions.slice(0, 3);
+                
+                if (recentTransactions.length === 0) {
+                    container.innerHTML = '<div style="text-align: center; color: rgba(226, 250, 252, 0.5); padding: 20px;">No recent transactions</div>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                recentTransactions.forEach(transaction => {
+                    const isDeposit = transaction.type === 'deposit';
+                    const isBuy = transaction.type === 'buy';
+                    const time = new Date(transaction.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    const transactionDiv = document.createElement('div');
+                    transactionDiv.className = 'transaction-item';
+                    transactionDiv.style.cssText = `
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px;
+                        background: rgba(0, 240, 255, 0.05);
+                        border-radius: 10px;
+                        margin-bottom: 10px;
+                        border-left: 3px solid ${isDeposit ? 'var(--success)' : isBuy ? 'var(--primary)' : 'var(--warning)'};
+                    `;
+                    
+                    const typeText = isDeposit ? 'Deposit' : isBuy ? 'Buy' : transaction.type === 'sell' ? 'Sell' : 'Withdrawal';
+                    const symbolText = transaction.coin_symbol ? ` ${transaction.coin_symbol}` : '';
+                    
+                    transactionDiv.innerHTML = `
+                        <div>
+                            <div style="font-weight: 600; color: ${isDeposit ? 'var(--success)' : isBuy ? 'var(--primary)' : 'var(--warning)'};">
+                                ${typeText}${symbolText}
+                            </div>
+                            <div style="font-size: 0.8rem; color: rgba(226, 250, 252, 0.6);">
+                                ${time} | ${transaction.status || 'completed'}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700; color: var(--light);">
+                                $${transaction.amount.toFixed(2)}
+                            </div>
+                            <div style="font-size: 0.8rem; color: ${isDeposit ? 'var(--success)' : 'var(--primary)'};">
+                                ${isDeposit ? '✓ Completed' : '✓ Executed'}
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(transactionDiv);
+                });
                 return;
             }
             
             container.innerHTML = '';
             
-            pendingTransactions.slice(0, 5).forEach(transaction => {
+            pendingTransactions.slice(0, 3).forEach(transaction => {
                 const isDeposit = transaction.type === 'deposit';
                 const time = new Date(transaction.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 
@@ -1910,7 +2046,7 @@
             
             container.innerHTML = '';
             
-            userTransactions.slice(0, 10).forEach(transaction => {
+            userTransactions.slice(0, 5).forEach(transaction => {
                 const activityItem = document.createElement('div');
                 activityItem.className = 'activity-item';
                 
@@ -1927,6 +2063,7 @@
                 };
                 
                 const activity = activityIcons[transaction.type] || { icon: 'fa-exchange-alt', color: 'var(--primary)', text: 'Transaction' };
+                const symbolText = transaction.coin_symbol ? ` ${transaction.coin_symbol}` : '';
                 
                 activityItem.innerHTML = `
                     <div class="activity-info">
@@ -1934,7 +2071,7 @@
                             <i class="fas ${activity.icon}"></i>
                         </div>
                         <div class="activity-details">
-                            <h4>${activity.text} $${transaction.amount.toFixed(2)}</h4>
+                            <h4>${activity.text}${symbolText}</h4>
                             <p>${date} ${time}</p>
                         </div>
                     </div>
@@ -1948,21 +2085,81 @@
 
         // ========== CHART FUNCTIONS ==========
         async function loadChartData() {
-            const data = await apiRequest(`/chart-data/${selectedCoin}/${timeframe}`);
-            if (data && data.length > 0) {
-                renderChart(data);
+            try {
+                const data = await apiRequest(`/chart-data/${selectedCoin}/${timeframe}`);
+                if (data && data.length > 0) {
+                    renderChart(data);
+                } else {
+                    generateMockChartData();
+                }
+            } catch (error) {
+                console.error('Failed to load chart data:', error);
+                generateMockChartData();
+            }
+        }
+
+        function generateMockChartData() {
+            const now = Date.now();
+            const dataPoints = 100;
+            const interval = getInterval(timeframe);
+            const basePrice = cryptoData[selectedCoin]?.price || 50000;
+            
+            const chartData = [];
+            let currentPrice = basePrice;
+            
+            for (let i = dataPoints - 1; i >= 0; i--) {
+                const time = new Date(now - (i * interval));
+                
+                // Simulate price movement
+                const change = (Math.random() - 0.5) * 0.02;
+                currentPrice = currentPrice * (1 + change);
+                
+                const open = currentPrice;
+                const close = currentPrice * (0.99 + Math.random() * 0.02);
+                const high = Math.max(open, close) * (1 + Math.random() * 0.01);
+                const low = Math.min(open, close) * (0.99 - Math.random() * 0.01);
+                
+                chartData.push({
+                    time: time,
+                    open: parseFloat(open.toFixed(2)),
+                    high: parseFloat(high.toFixed(2)),
+                    low: parseFloat(low.toFixed(2)),
+                    close: parseFloat(close.toFixed(2))
+                });
+            }
+            
+            renderChart(chartData);
+        }
+
+        function getInterval(timeframe) {
+            switch(timeframe) {
+                case '1h': return 36 * 1000;
+                case '1d': return 864 * 1000;
+                case '1w': return 6048 * 1000;
+                case '1m': return 25920 * 1000;
+                case '1y': return 315360 * 1000;
+                default: return 36 * 1000;
             }
         }
 
         function renderChart(chartData) {
-            const ctx = document.getElementById('priceChart').getContext('2d');
+            const ctx = document.getElementById('priceChart');
+            if (!ctx) return;
+            
+            const chartContext = ctx.getContext('2d');
             
             if (priceChart) {
                 priceChart.destroy();
             }
             
             if (chartType === 'candlestick') {
-                // Convert data for candlestick chart
+                // Check if Chart.financial is available
+                if (typeof Chart.controllers.candlestick === 'undefined') {
+                    console.warn('Candlestick chart not available, falling back to line chart');
+                    chartType = 'line';
+                    return renderChart(chartData);
+                }
+                
                 const candlestickData = chartData.map(point => ({
                     t: point.time,
                     o: point.open,
@@ -1971,7 +2168,7 @@
                     c: point.close
                 }));
                 
-                priceChart = new Chart(ctx, {
+                priceChart = new Chart(chartContext, {
                     type: 'candlestick',
                     data: {
                         datasets: [{
@@ -1990,7 +2187,11 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
                         },
                         scales: {
                             x: {
@@ -2001,12 +2202,21 @@
                                           timeframe === '1w' ? 'day' :
                                           timeframe === '1m' ? 'day' : 'month'
                                 },
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
+                                ticks: { 
+                                    color: 'rgba(226, 250, 252, 0.7)',
+                                    maxTicksLimit: 10
+                                }
                             },
                             y: {
                                 position: 'right',
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
                                 ticks: { 
                                     color: 'rgba(226, 250, 252, 0.7)',
                                     callback: value => '$' + value.toLocaleString()
@@ -2024,7 +2234,7 @@
                 
                 const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
                 
-                priceChart = new Chart(ctx, {
+                priceChart = new Chart(chartContext, {
                     type: 'line',
                     data: {
                         datasets: [{
@@ -2035,26 +2245,53 @@
                             borderWidth: 2,
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 0
+                            pointRadius: 0,
+                            pointHoverRadius: 5
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `$${context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             x: {
                                 type: 'time',
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
-                            },
-                            y: {
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                                time: {
+                                    unit: timeframe === '1h' ? 'minute' : 
+                                          timeframe === '1d' ? 'hour' :
+                                          timeframe === '1w' ? 'day' :
+                                          timeframe === '1m' ? 'day' : 'month',
+                                    tooltipFormat: 'MMM dd, yyyy HH:mm'
+                                },
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
                                 ticks: { 
                                     color: 'rgba(226, 250, 252, 0.7)',
-                                    callback: value => '$' + value.toLocaleString()
+                                    maxTicksLimit: 10
+                                }
+                            },
+                            y: {
+                                position: 'right',
+                                grid: { 
+                                    color: 'rgba(0, 240, 255, 0.1)',
+                                    borderColor: 'rgba(0, 240, 255, 0.2)'
+                                },
+                                ticks: { 
+                                    color: 'rgba(226, 250, 252, 0.7)',
+                                    callback: value => '$' + value.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})
                                 }
                             }
                         }
@@ -2084,7 +2321,7 @@
             const price = cryptoData[symbol]?.price || 0;
             
             // Find user's holdings for this coin
-            const holding = userPortfolio.find(p => p.coin_symbol === symbol);
+            const holding = userPortfolio.find(p => p.coin_symbol === symbol && p.account_type === currentAccountType);
             const maxAmount = holding?.amount || 0;
             
             if (amount > maxAmount) {
@@ -2102,46 +2339,80 @@
         }
 
         async function executeTrade(type) {
-            const form = type === 'buy' ? document.getElementById('buyForm') : document.getElementById('sellForm');
-            const symbol = form.querySelector('select').value;
-            const amount = parseFloat(form.querySelector('input[type="number"]').value);
-            
-            if (!amount || amount <= 0) {
-                showNotification('warning', 'Invalid Amount', 'Please enter a valid amount');
-                return;
-            }
-            
-            const data = {
-                type: type,
-                symbol: symbol,
-                amount: amount,
-                account_type: currentAccountType
-            };
-            
-            const result = await apiRequest('/trade', {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-            
-            if (result) {
-                showNotification('success', 'Trade Executed', result.message);
+            try {
+                const form = type === 'buy' ? document.getElementById('buyForm') : document.getElementById('sellForm');
+                const symbol = form.querySelector('select').value;
+                const amountInput = form.querySelector('input[type="number"]');
+                const amount = parseFloat(amountInput.value);
                 
-                // Update user data
-                if (type === 'buy') {
-                    if (currentAccountType === 'funding') {
-                        currentUser.funding_balance = result.newBalance || currentUser.funding_balance;
-                    } else {
-                        currentUser.demo_balance = result.newBalance || currentUser.demo_balance;
-                    }
-                } else {
-                    currentUser.funding_balance = result.newBalance || currentUser.funding_balance;
+                if (!amount || amount <= 0) {
+                    showNotification('warning', 'Invalid Amount', 'Please enter a valid amount');
+                    return;
                 }
-                localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
-                updateUserDisplay();
                 
-                // Reload portfolio and transactions
-                loadPortfolio();
-                loadTransactions();
+                if (type === 'sell') {
+                    const holding = userPortfolio.find(p => p.coin_symbol === symbol && p.account_type === currentAccountType);
+                    const coinAmount = amount / (cryptoData[symbol]?.price || 1);
+                    if (!holding || holding.amount < coinAmount) {
+                        showNotification('warning', 'Insufficient Coins', `You don't have enough ${symbol} to sell`);
+                        return;
+                    }
+                }
+                
+                if (type === 'buy') {
+                    const totalCost = amount + (amount * 0.001);
+                    const balance = currentAccountType === 'funding' ? currentUser.funding_balance : currentUser.demo_balance;
+                    
+                    if (balance < totalCost) {
+                        showNotification('warning', 'Insufficient Balance', `You need $${totalCost.toFixed(2)} but only have $${balance.toFixed(2)}`);
+                        return;
+                    }
+                }
+                
+                const data = {
+                    type: type,
+                    symbol: symbol,
+                    amount: amount,
+                    account_type: currentAccountType
+                };
+                
+                // Use WebSocket for real-time trading
+                if (socket && socket.connected) {
+                    socket.emit('place_trade', data);
+                    showNotification('info', 'Processing Trade', 'Executing your trade...');
+                } else {
+                    // Fallback to API
+                    const result = await apiRequest('/trade', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (result && result.success) {
+                        showNotification('success', 'Trade Executed', result.message);
+                        
+                        // Update user data
+                        if (type === 'buy') {
+                            if (currentAccountType === 'funding') {
+                                currentUser.funding_balance = result.newBalance;
+                            } else {
+                                currentUser.demo_balance = result.newBalance;
+                            }
+                        } else {
+                            if (currentAccountType === 'funding') {
+                                currentUser.funding_balance = result.newBalance;
+                            } else {
+                                currentUser.demo_balance = result.newBalance;
+                            }
+                        }
+                        
+                        localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+                        updateUserDisplay();
+                        
+                        // Reload portfolio and transactions
+                        await loadPortfolio();
+                        await loadTransactions();
+                    }
+                }
                 
                 // Reset form
                 if (type === 'buy') {
@@ -2151,6 +2422,9 @@
                 }
                 updateBuyCalculation();
                 updateSellCalculation();
+                
+            } catch (error) {
+                showNotification('danger', 'Trade Failed', error.message || 'Failed to execute trade');
             }
         }
 
@@ -2162,7 +2436,7 @@
             const msgDiv = document.createElement('div');
             msgDiv.className = 'chat-message';
             
-            const time = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const time = new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
             msgDiv.innerHTML = `
                 <div>
@@ -2174,9 +2448,6 @@
             
             container.appendChild(msgDiv);
             container.scrollTop = container.scrollHeight;
-            
-            // Update online count (simulated)
-            updateOnlineCount();
         }
 
         function updateChatDisplay() {
@@ -2190,28 +2461,50 @@
             });
         }
 
-        function updateOnlineCount() {
+        function updateOnlineCountDisplay(count) {
             const onlineCount = document.getElementById('onlineCount');
             if (!onlineCount) return;
             
-            // Simulate online users
-            const baseCount = 150;
+            // Add some variation for realistic movement
+            const baseCount = count || 150;
             const randomChange = Math.floor(Math.random() * 20) - 10;
-            const newCount = Math.max(100, baseCount + randomChange);
+            const newCount = Math.max(10, baseCount + randomChange);
+            
             onlineCount.textContent = newCount;
+            
+            // Add subtle animation
+            onlineCount.style.transform = 'scale(1.2)';
+            onlineCount.style.color = 'var(--success)';
+            setTimeout(() => {
+                onlineCount.style.transform = 'scale(1)';
+                setTimeout(() => {
+                    onlineCount.style.color = '';
+                }, 300);
+            }, 300);
         }
 
         function sendChatMessage() {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             
-            if (message && socket && currentUser) {
+            if (message && socket && socket.connected && currentUser) {
+                // Send immediately via WebSocket
                 socket.emit('chat_message', {
                     userId: currentUser.id,
                     username: currentUser.username,
                     message: message
                 });
                 input.value = '';
+            } else if (message) {
+                // Fallback: Add message locally
+                addChatMessage({
+                    user_id: currentUser.id,
+                    username: currentUser.username,
+                    message: message,
+                    created_at: new Date().toISOString()
+                });
+                input.value = '';
+                showNotification('warning', 'Chat Offline', 'Message saved locally');
             }
         }
 
@@ -2248,6 +2541,9 @@
                         portfolioIndicator.textContent = 'Demo';
                         portfolioIndicator.className = 'account-indicator indicator-demo';
                     }
+                    
+                    // Update portfolio display for this account
+                    updatePortfolioDisplay();
                 });
             });
             
@@ -2263,6 +2559,9 @@
                     document.querySelectorAll('#accountSelector .account-btn').forEach(b => {
                         b.classList.toggle('active', b.dataset.account === currentAccountType);
                     });
+                    
+                    document.getElementById('fundingBalanceCard').classList.toggle('active', currentAccountType === 'funding');
+                    document.getElementById('demoBalanceCard').classList.toggle('active', currentAccountType === 'demo');
                 });
             });
             
@@ -2304,7 +2603,7 @@
                 btn.addEventListener('click', function() {
                     const percent = this.dataset.percent;
                     const symbol = document.getElementById('sellCoin').value;
-                    const holding = userPortfolio.find(p => p.coin_symbol === symbol);
+                    const holding = userPortfolio.find(p => p.coin_symbol === symbol && p.account_type === currentAccountType);
                     const maxAmount = holding?.amount || 0;
                     const amount = (maxAmount * percent) / 100;
                     document.getElementById('sellAmount').value = formatAmount(amount, symbol, true);
@@ -2351,17 +2650,28 @@
                 }
             });
             
-            // History button
-            document.getElementById('historyBtn').addEventListener('click', function(e) {
+            // History button - FIXED
+            document.getElementById('historyBtn').addEventListener('click', async function(e) {
                 e.preventDefault();
-                loadTransactions();
-                showNotification('info', 'History', 'Transaction history refreshed');
+                
+                showNotification('info', 'Loading History', 'Fetching your transaction history...');
+                window.historyButtonClicked = true;
+                
+                await loadTransactions();
+                
+                // Also request via WebSocket for real-time updates
+                if (socket && socket.connected) {
+                    socket.emit('get_transactions');
+                }
             });
             
             // Logout
             document.getElementById('logoutBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 if (confirm('Are you sure you want to logout?')) {
+                    if (socket) {
+                        socket.disconnect();
+                    }
                     localStorage.removeItem('quantumcoin_token');
                     localStorage.removeItem('quantumcoin_user');
                     window.location.href = '/';
@@ -2373,9 +2683,14 @@
                 if (notifications.length > 0) {
                     let message = 'Recent Notifications:\n\n';
                     notifications.slice(0, 5).forEach(notif => {
-                        message += `• ${notif.title}: ${notif.message}\n`;
+                        const time = new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        message += `[${time}] ${notif.title}: ${notif.message}\n`;
                     });
                     alert(message);
+                    
+                    // Clear notifications
+                    notifications = [];
+                    document.getElementById('notificationCount').textContent = '0';
                 } else {
                     alert('No new notifications');
                 }
@@ -2408,7 +2723,7 @@
             notification.className = `notification ${type}`;
             notification.innerHTML = `
                 <div class="notification-icon">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'}"></i>
                 </div>
                 <div class="notification-content">
                     <div class="notification-title">${title}</div>
@@ -2429,11 +2744,17 @@
             }, duration);
             
             // Add to notifications list
-            notifications.unshift({ type, title, message, timestamp: new Date() });
+            notifications.unshift({ 
+                type, 
+                title, 
+                message, 
+                timestamp: new Date(),
+                read: false 
+            });
             if (notifications.length > 20) notifications.pop();
             
             // Update notification count
-            const unreadCount = notifications.length;
+            const unreadCount = notifications.filter(n => !n.read).length;
             document.getElementById('notificationCount').textContent = unreadCount > 9 ? '9+' : unreadCount;
         }
 

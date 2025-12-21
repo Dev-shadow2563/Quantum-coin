@@ -1665,8 +1665,8 @@
             updateUserDisplay();
         }
 
-        async function loadMarketData() {
-            const data = await apiRequest('/market/data');
+async function loadMarketData() {
+    const data = await apiRequest('/market/data');
             if (data) {
                 cryptoData = data;
                 initializeTradingPairs();

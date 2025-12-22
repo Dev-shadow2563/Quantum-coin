@@ -447,11 +447,11 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" class="form-control" required>
+                    <input type="text" id="username" class="form-control" required value="admin">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" class="form-control" required>
+                    <input type="password" id="password" class="form-control" required value="admin123">
                 </div>
                 <button type="submit" class="btn">Login</button>
             </form>
@@ -634,6 +634,27 @@
         </div>
     </div>
 
+    <!-- Rejection Confirmation Modal -->
+    <div class="modal" id="rejectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reject Withdrawal</h2>
+                <button class="modal-close" id="closeRejectModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="rejectReason">Rejection Reason (Optional)</label>
+                    <textarea id="rejectReason" class="form-control" rows="4" 
+                              placeholder="Explain why this withdrawal is being rejected..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn reject-btn" id="confirmRejectBtn">Confirm Rejection</button>
+                <button class="action-btn" id="cancelRejectBtn" style="background: rgba(226, 250, 252, 0.1); color: var(--light);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'https://quantum-coin-backend.onrender.com/api';
         let adminToken = null;
@@ -666,12 +687,17 @@
         
         // Modal elements
         const withdrawalModal = document.getElementById('withdrawalModal');
+        const rejectModal = document.getElementById('rejectModal');
         const closeWithdrawalModal = document.getElementById('closeWithdrawalModal');
+        const closeRejectModal = document.getElementById('closeRejectModal');
         const withdrawalDetails = document.getElementById('withdrawalDetails');
         const transactionHashInput = document.getElementById('transactionHash');
         const adminNotesInput = document.getElementById('adminNotes');
+        const rejectReasonInput = document.getElementById('rejectReason');
         const completeWithdrawalBtn = document.getElementById('completeWithdrawalBtn');
         const rejectWithdrawalBtn = document.getElementById('rejectWithdrawalBtn');
+        const confirmRejectBtn = document.getElementById('confirmRejectBtn');
+        const cancelRejectBtn = document.getElementById('cancelRejectBtn');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -727,9 +753,17 @@
                 });
             });
             
-            // Modal close
+            // Modal close buttons
             closeWithdrawalModal.addEventListener('click', function() {
                 withdrawalModal.style.display = 'none';
+            });
+            
+            closeRejectModal.addEventListener('click', function() {
+                rejectModal.style.display = 'none';
+            });
+            
+            cancelRejectBtn.addEventListener('click', function() {
+                rejectModal.style.display = 'none';
             });
             
             // Complete withdrawal
@@ -737,17 +771,24 @@
                 completeWithdrawal();
             });
             
-            // Reject withdrawal
+            // Reject withdrawal button in withdrawal modal
             rejectWithdrawalBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to reject this withdrawal? Funds will be returned to the user.')) {
-                    rejectWithdrawal();
-                }
+                withdrawalModal.style.display = 'none';
+                rejectModal.style.display = 'flex';
+            });
+            
+            // Confirm rejection
+            confirmRejectBtn.addEventListener('click', function() {
+                rejectWithdrawalWithReason();
             });
             
             // Close modal on outside click
             window.addEventListener('click', function(e) {
                 if (e.target === withdrawalModal) {
                     withdrawalModal.style.display = 'none';
+                }
+                if (e.target === rejectModal) {
+                    rejectModal.style.display = 'none';
                 }
             });
         }
@@ -968,7 +1009,8 @@
                     const row = document.createElement('tr');
                     const date = new Date(transaction.created_at).toLocaleDateString();
                     const typeText = transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal';
-                    const statusClass = transaction.status === 'completed' ? 'badge-approved' : 'badge-rejected';
+                    const statusClass = transaction.status === 'completed' ? 'badge-approved' : 
+                                      transaction.status === 'rejected' ? 'badge-rejected' : 'badge-pending';
                     
                     row.innerHTML = `
                         <td>${transaction.id}</td>
@@ -1047,6 +1089,7 @@
                 
                 transactionHashInput.value = '';
                 adminNotesInput.value = '';
+                rejectReasonInput.value = '';
                 withdrawalModal.style.display = 'flex';
             }
         }
@@ -1081,18 +1124,19 @@
             }
         }
 
-        async function rejectWithdrawal() {
+        async function rejectWithdrawalWithReason() {
             if (!currentTransaction) return;
             
-            const notes = adminNotesInput.value.trim() || 'Withdrawal rejected by admin';
+            const reason = rejectReasonInput.value.trim() || 'Withdrawal rejected by admin';
             
             const result = await apiRequest(`/admin/withdrawals/${currentTransaction.id}/reject`, {
                 method: 'POST',
-                body: JSON.stringify({ notes: notes })
+                body: JSON.stringify({ notes: reason })
             });
             
             if (result && result.success) {
                 withdrawalModal.style.display = 'none';
+                rejectModal.style.display = 'none';
                 alert('Withdrawal rejected and funds returned to user');
                 
                 // Refresh data
@@ -1137,6 +1181,11 @@
             console.error('Error:', message);
             alert('Error: ' + message);
         }
+
+        // Make functions available globally for onclick handlers
+        window.openWithdrawalModal = openWithdrawalModal;
+        window.approveDeposit = approveDeposit;
+        window.rejectDeposit = rejectDeposit;
     </script>
 </body>
 </html>

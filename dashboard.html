@@ -6,8 +6,7 @@
     <title>QuantumCoin Dashboard | Live Crypto Trading</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * {
@@ -201,6 +200,101 @@
             background: rgba(0, 240, 255, 0.1);
             color: var(--primary);
         }
+
+    .notifications-container {
+        background: rgba(10, 10, 31, 0.95);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    
+    .notification-header h3 {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+    
+    .clear-notifications {
+        background: transparent;
+        border: none;
+        color: rgba(226, 250, 252, 0.7);
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: color 0.3s ease;
+    }
+    
+    .clear-notifications:hover {
+        color: var(--accent);
+    }
+    
+    .notification-item {
+        background: rgba(0, 240, 255, 0.05);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid var(--primary);
+        transition: all 0.3s ease;
+    }
+    
+    .notification-item:hover {
+        background: rgba(0, 240, 255, 0.1);
+    }
+    
+    .notification-item.warning {
+        border-left-color: var(--warning);
+    }
+    
+    .notification-item.success {
+        border-left-color: var(--success);
+    }
+    
+    .notification-item.danger {
+        border-left-color: var(--danger);
+    }
+    
+    .notification-content h4 {
+        color: var(--light);
+        margin-bottom: 5px;
+        font-size: 1rem;
+    }
+    
+    .notification-content p {
+        color: rgba(226, 250, 252, 0.7);
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    .notification-time {
+        color: rgba(226, 250, 252, 0.5);
+        font-size: 0.8rem;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: var(--danger);
+        color: var(--darker);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+        cursor: pointer;
+    }
 
         /* Main Content */
         .main-content {
@@ -444,30 +538,12 @@
             border-radius: 15px;
             padding: 20px;
             border: 1px solid rgba(0, 240, 255, 0.1);
-            position: relative;
         }
 
         .chart-container {
             width: 100%;
             height: 100%;
             position: relative;
-        }
-
-        .chart-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-size: 1.2rem;
-            z-index: 10;
-            border-radius: 15px;
-            display: none;
         }
 
         /* Trading Pairs */
@@ -1203,7 +1279,18 @@
                     <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </div>
-
+            <!-- Add this notification system after your dashboard header -->
+<div class="notifications-container" id="notificationsContainer" style="display: none;">
+    <div class="notification-header">
+        <h3><i class="fas fa-bell"></i> Notifications</h3>
+        <button class="clear-notifications" id="clearNotifications">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="notifications-list" id="notificationsList">
+        <!-- Notifications will be loaded here -->
+    </div>
+</div>
             <!-- Main Content -->
             <div class="main-content">
                 <!-- Welcome Banner -->
@@ -1269,7 +1356,7 @@
                 <!-- Trading View -->
                 <div class="trading-section">
                     <div class="section-header">
-                        <h2>Live Trading View - <span id="selectedCoinName">Ethereum (ETH)</span></h2>
+                        <h2>Live Trading View - <span id="selectedCoinName">Bitcoin (BTC)</span></h2>
                         <div class="timeframe-selector">
                             <button class="timeframe-btn active" data-timeframe="1h">1H</button>
                             <button class="timeframe-btn" data-timeframe="1d">1D</button>
@@ -1291,9 +1378,6 @@
                     </div>
                     
                     <div class="trading-chart" id="tradingChart">
-                        <div class="chart-overlay" id="chartOverlay">
-                            <div class="loading-spinner"></div>
-                        </div>
                         <div class="chart-container">
                             <canvas id="priceChart"></canvas>
                         </div>
@@ -1336,7 +1420,7 @@
                             <label for="buyCoin">Coin</label>
                             <select id="buyCoin" class="form-control">
                                 <option value="BTC">Bitcoin (BTC)</option>
-                                <option value="ETH" selected>Ethereum (ETH)</option>
+                                <option value="ETH">Ethereum (ETH)</option>
                                 <option value="DOGE">Dogecoin (DOGE)</option>
                                 <option value="SHIB">Shiba Inu (SHIB)</option>
                                 <option value="ADA">Cardano (ADA)</option>
@@ -1389,7 +1473,7 @@
                             </div>
                             <div class="summary-row">
                                 <span>You Receive</span>
-                                <span id="buyReceive">0.00000 ETH</span>
+                                <span id="buyReceive">0.00000 BTC</span>
                             </div>
                         </div>
                         
@@ -1405,7 +1489,7 @@
                             <label for="sellCoin">Coin</label>
                             <select id="sellCoin" class="form-control">
                                 <option value="BTC">Bitcoin (BTC)</option>
-                                <option value="ETH" selected>Ethereum (ETH)</option>
+                                <option value="ETH">Ethereum (ETH)</option>
                                 <option value="DOGE">Dogecoin (DOGE)</option>
                                 <option value="SHIB">Shiba Inu (SHIB)</option>
                                 <option value="ADA">Cardano (ADA)</option>
@@ -1518,9 +1602,9 @@
         
         let socket = null;
         let currentUser = null;
-        let token = null;
+        let token = null;  // This is now a simple session token, not JWT
         let currentAccountType = 'funding';
-        let selectedCoin = 'ETH';
+        let selectedCoin = 'BTC';
         let chartType = 'candlestick';
         let timeframe = '1h';
         let priceChart = null;
@@ -1529,20 +1613,8 @@
         let userTransactions = [];
         let chatMessages = [];
         let notifications = [];
-        let onlineCount = Math.floor(Math.random() * 50) + 100;
-        let currentPrediction = 'up';
-        
-        // Realistic price ranges for different coins
-        const priceRanges = {
-            BTC: { min: 25000, max: 75000, volatility: 0.03 },
-            ETH: { min: 1200, max: 3500, volatility: 0.04 },
-            DOGE: { min: 0.05, max: 0.15, volatility: 0.08 },
-            SHIB: { min: 0.000005, max: 0.00002, volatility: 0.12 },
-            ADA: { min: 0.25, max: 0.75, volatility: 0.05 },
-            SOL: { min: 50, max: 150, volatility: 0.06 },
-            XRP: { min: 0.35, max: 0.85, volatility: 0.04 },
-            BNB: { min: 200, max: 350, volatility: 0.03 }
-        };
+        let onlineCount = Math.floor(Math.random() * 50) + 100; // Random online count
+        let currentPrediction = 'up'; // Default prediction
 
         // ========== INITIALIZATION ==========
         document.addEventListener('DOMContentLoaded', function() {
@@ -1551,6 +1623,7 @@
             currentUser = JSON.parse(localStorage.getItem('quantumcoin_user') || 'null');
             
             if (!token || !currentUser) {
+                // Redirect to login
                 window.location.href = '/';
                 return;
             }
@@ -1560,111 +1633,89 @@
             
             // Load initial data
             loadUserData();
-            initializeMarketData(); // Use local market data first
+            loadMarketData();
             loadPortfolio();
             loadTransactions();
+            loadTradeHistory();
             loadChatHistory();
             
             // Setup event listeners
             initializeEventListeners();
             
-            // Start live updates
-            startLiveUpdates();
-            
             // Update online count periodically
             updateOnlineCount();
-            setInterval(updateOnlineCount, 30000);
+            setInterval(updateOnlineCount, 30000); // Update every 30 seconds
+            
+            // Add initial chat messages gradually
+            setTimeout(addInitialChatMessages, 1000);
         });
 
         // ========== WEB SOCKET ==========
         function initializeWebSocket() {
-            try {
-                socket = io(SOCKET_URL, {
-                    transports: ['websocket', 'polling'],
-                    timeout: 10000
-                });
-                
-                socket.on('connect', () => {
-                    updateConnectionStatus(true);
-                    console.log('WebSocket connected');
-                    
-                    if (currentUser && currentUser.id) {
-                        socket.emit('join_user', currentUser.id);
-                    }
-                    
-                    // Request market data via socket
-                    socket.emit('get_market_data');
-                });
-                
-                socket.on('disconnect', () => {
-                    updateConnectionStatus(false);
-                    console.log('WebSocket disconnected');
-                });
-                
-                socket.on('connect_error', (error) => {
-                    console.error('WebSocket connection error:', error);
-                    updateConnectionStatus(false);
-                    // Fall back to local updates
-                    showNotification('warning', 'Connection Issue', 'Using local market data');
-                });
-                
-                // Market updates
-                socket.on('market_update', (data) => {
-                    cryptoData = data;
-                    updateTradingPairs();
-                    updateFormPrices(selectedCoin);
-                    updatePortfolioValues();
-                });
-                
-                socket.on('market_data', (data) => {
-                    cryptoData = data;
-                    updateTradingPairs();
-                    updateFormPrices(selectedCoin);
-                    loadChartData();
-                });
-                
-                // Chat messages
-                socket.on('new_chat_message', (message) => {
-                    addChatMessage(message);
-                });
-                
-                socket.on('chat_history', (messages) => {
-                    chatMessages = messages;
-                    updateChatDisplay();
-                });
-                
-                // Transaction notifications
-                socket.on('transaction_approved', (data) => {
-                    showNotification('success', 'Transaction Approved', 
-                        `Your ${data.type} of $${data.amount} has been approved.`);
-                    loadUserData();
-                    loadTransactions();
-                });
-                
-                socket.on('transaction_rejected', (data) => {
-                    showNotification('warning', 'Transaction Rejected', 
-                        `Your ${data.type} of $${data.amount} was rejected. ${data.notes || ''}`);
-                    loadUserData();
-                    loadTransactions();
-                });
-                
-                // Balance updates
-                socket.on('balance_update', (data) => {
-                    if (data.funding_balance !== undefined) {
-                        currentUser.funding_balance = data.funding_balance;
-                        document.getElementById('fundingBalance').textContent = `$${data.funding_balance.toFixed(2)}`;
-                    }
-                    if (data.demo_balance !== undefined) {
-                        currentUser.demo_balance = data.demo_balance;
-                        document.getElementById('demoBalance').textContent = `$${data.demo_balance.toFixed(2)}`;
-                    }
-                    localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
-                });
-                
-            } catch (error) {
-                console.error('Failed to initialize WebSocket:', error);
+            socket = io(SOCKET_URL);
+            
+            socket.on('connect', () => {
+                updateConnectionStatus(true);
+                if (currentUser && currentUser.id) {
+                    socket.emit('join_user', currentUser.id);
+                }
+                socket.emit('get_chat_history');
+            });
+            
+            socket.on('disconnect', () => {
                 updateConnectionStatus(false);
-            }
+            });
+            
+            socket.on('connect_error', (error) => {
+                console.error('WebSocket connection error:', error);
+                updateConnectionStatus(false);
+            });
+            
+            // Market updates
+            socket.on('market_update', (data) => {
+                cryptoData = data;
+                updateTradingPairs();
+                updateFormPrices(selectedCoin);
+                updatePortfolioValues();
+            });
+            
+            // Chat messages
+            socket.on('new_chat_message', (message) => {
+                addChatMessage(message);
+            });
+            
+            socket.on('chat_history', (messages) => {
+                chatMessages = messages;
+                updateChatDisplay();
+            });
+            
+            // Transaction notifications
+            socket.on('transaction_approved', (data) => {
+                showNotification('success', 'Transaction Approved', 
+                    `Your ${data.type} of $${data.amount} has been approved.`);
+                loadUserData();
+                loadTransactions();
+            });
+            
+            socket.on('transaction_rejected', (data) => {
+                showNotification('warning', 'Transaction Rejected', 
+                    `Your ${data.type} of $${data.amount} was rejected. ${data.notes || ''}`);
+                loadUserData();
+                loadTransactions();
+            });
+            
+            // Balance updates
+            socket.on('balance_update', (data) => {
+                if (data.funding_balance !== undefined) {
+                    currentUser.funding_balance = data.funding_balance;
+                    document.getElementById('fundingBalance').textContent = `$${data.funding_balance.toFixed(2)}`;
+                }
+                if (data.demo_balance !== undefined) {
+                    currentUser.demo_balance = data.demo_balance;
+                    document.getElementById('demoBalance').textContent = `$${data.demo_balance.toFixed(2)}`;
+                }
+                localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+            });
         }
 
         function updateConnectionStatus(connected) {
@@ -1674,124 +1725,8 @@
             if (connected) {
                 statusElement.innerHTML = '<i class="fas fa-circle" style="font-size: 0.7rem; color: var(--success);"></i> <span>Connected</span>';
             } else {
-                statusElement.innerHTML = '<i class="fas fa-circle" style="font-size: 0.7rem; color: var(--warning);"></i> <span>Offline</span>';
+                statusElement.innerHTML = '<i class="fas fa-circle" style="font-size: 0.7rem; color: var(--danger);"></i> <span>Disconnected</span>';
             }
-        }
-
-        // ========== MARKET DATA - LOCAL FALLBACK ==========
-        function initializeMarketData() {
-            // Initialize with realistic prices
-            cryptoData = {
-                BTC: { 
-                    name: 'Bitcoin', 
-                    price: getRealisticPrice('BTC'), 
-                    change: (Math.random() * 10 - 5).toFixed(2), 
-                    volume: Math.random() * 50000000000 + 20000000000,
-                    color: '#f7931a' 
-                },
-                ETH: { 
-                    name: 'Ethereum', 
-                    price: getRealisticPrice('ETH'), 
-                    change: (Math.random() * 10 - 5).toFixed(2), 
-                    volume: Math.random() * 20000000000 + 8000000000,
-                    color: '#627eea' 
-                },
-                DOGE: { 
-                    name: 'Dogecoin', 
-                    price: getRealisticPrice('DOGE'), 
-                    change: (Math.random() * 20 - 10).toFixed(2), 
-                    volume: Math.random() * 3000000000 + 1000000000,
-                    color: '#c2a633' 
-                },
-                SHIB: { 
-                    name: 'Shiba Inu', 
-                    price: getRealisticPrice('SHIB'), 
-                    change: (Math.random() * 30 - 15).toFixed(2), 
-                    volume: Math.random() * 1000000000 + 500000000,
-                    color: '#ff00c8' 
-                },
-                ADA: { 
-                    name: 'Cardano', 
-                    price: getRealisticPrice('ADA'), 
-                    change: (Math.random() * 8 - 4).toFixed(2), 
-                    volume: Math.random() * 1000000000 + 300000000,
-                    color: '#0033ad' 
-                },
-                SOL: { 
-                    name: 'Solana', 
-                    price: getRealisticPrice('SOL'), 
-                    change: (Math.random() * 12 - 6).toFixed(2), 
-                    volume: Math.random() * 5000000000 + 2000000000,
-                    color: '#00ffa3' 
-                },
-                XRP: { 
-                    name: 'Ripple', 
-                    price: getRealisticPrice('XRP'), 
-                    change: (Math.random() * 8 - 4).toFixed(2), 
-                    volume: Math.random() * 4000000000 + 1500000000,
-                    color: '#23292f' 
-                },
-                BNB: { 
-                    name: 'Binance Coin', 
-                    price: getRealisticPrice('BNB'), 
-                    change: (Math.random() * 6 - 3).toFixed(2), 
-                    volume: Math.random() * 3000000000 + 1000000000,
-                    color: '#f0b90b' 
-                }
-            };
-            
-            initializeTradingPairs();
-            updateFormPrices(selectedCoin);
-            loadChartData();
-        }
-
-        function getRealisticPrice(symbol) {
-            const range = priceRanges[symbol];
-            if (!range) return 1000;
-            
-            // Generate price within range with some randomness
-            const price = range.min + Math.random() * (range.max - range.min);
-            return parseFloat(price.toFixed(symbol === 'SHIB' ? 8 : 2));
-        }
-
-        function updateMarketData() {
-            if (!cryptoData || Object.keys(cryptoData).length === 0) {
-                initializeMarketData();
-                return;
-            }
-            
-            // Update prices with realistic changes
-            Object.keys(cryptoData).forEach(symbol => {
-                const range = priceRanges[symbol] || { min: 1, max: 1000, volatility: 0.02 };
-                const change = (Math.random() * 2 - 1) * range.volatility;
-                cryptoData[symbol].price *= (1 + change);
-                cryptoData[symbol].price = Math.max(range.min, Math.min(range.max, cryptoData[symbol].price));
-                cryptoData[symbol].change = (change * 100).toFixed(2);
-                cryptoData[symbol].volume *= (1 + Math.random() * 0.2 - 0.1);
-            });
-            
-            updateTradingPairs();
-            updateFormPrices(selectedCoin);
-            updatePortfolioValues();
-            
-            // Update chart if it exists
-            if (priceChart && priceChart.data && priceChart.data.datasets[0]) {
-                const newData = generateChartData();
-                priceChart.data.datasets[0].data = newData;
-                priceChart.update('none');
-            }
-        }
-
-        function startLiveUpdates() {
-            // Update market data every 5 seconds
-            setInterval(updateMarketData, 5000);
-            
-            // Also try to fetch from API periodically
-            setInterval(() => {
-                if (socket && socket.connected) {
-                    socket.emit('get_market_data');
-                }
-            }, 10000);
         }
 
         // ========== API CALLS ==========
@@ -1809,6 +1744,7 @@
                 });
                 
                 if (response.status === 401) {
+                    // Session expired or invalid
                     localStorage.removeItem('quantumcoin_token');
                     localStorage.removeItem('quantumcoin_user');
                     window.location.href = '/';
@@ -1824,13 +1760,25 @@
                 return data;
             } catch (error) {
                 console.error('API request failed:', error);
+                showNotification('warning', 'Request Failed', error.message);
                 return null;
             }
         }
 
         // ========== DATA LOADING ==========
         async function loadUserData() {
+            // User data is already in localStorage from login
             updateUserDisplay();
+        }
+
+async function loadMarketData() {
+    const data = await apiRequest('/market/data');
+            if (data) {
+                cryptoData = data;
+                initializeTradingPairs();
+                updateFormPrices(selectedCoin);
+                loadChartData();
+            }
         }
 
         async function loadPortfolio() {
@@ -1847,6 +1795,14 @@
                 userTransactions = data;
                 updateTransactionsDisplay();
                 updateActivityDisplay();
+            }
+        }
+
+        async function loadTradeHistory() {
+            const data = await apiRequest('/trade/history');
+            if (data) {
+                // You can display trade history if needed
+                console.log('Trade history loaded:', data);
             }
         }
 
@@ -1881,7 +1837,7 @@
                 pairCard.dataset.symbol = symbol;
                 if (symbol === selectedCoin) pairCard.classList.add('active');
                 
-                const isPositive = parseFloat(data.change) >= 0;
+                const isPositive = data.change >= 0;
                 const volumeText = formatVolume(data.volume);
                 
                 pairCard.innerHTML = `
@@ -1897,7 +1853,7 @@
                     <div class="pair-price" id="price-${symbol}">$${formatPrice(data.price, symbol)}</div>
                     <div class="pair-change ${isPositive ? 'positive' : 'negative'}" id="change-${symbol}">
                         <i class="fas fa-${isPositive ? 'arrow-up' : 'arrow-down'}"></i>
-                        ${isPositive ? '+' : ''}${data.change}%
+                        ${isPositive ? '+' : ''}${data.change.toFixed(2)}%
                     </div>
                     <div class="pair-volume">Vol: ${volumeText}</div>
                 `;
@@ -1918,10 +1874,10 @@
                 if (priceElement && changeElement && pairCard) {
                     const oldPrice = parseFloat(priceElement.textContent.replace('$', '').replace(/,/g, '')) || data.price;
                     const newPrice = data.price;
-                    const isPositive = parseFloat(data.change) >= 0;
+                    const isPositive = data.change >= 0;
                     
                     priceElement.textContent = `$${formatPrice(newPrice, symbol)}`;
-                    changeElement.innerHTML = `<i class="fas fa-${isPositive ? 'arrow-up' : 'arrow-down'}"></i> ${isPositive ? '+' : ''}${data.change}%`;
+                    changeElement.innerHTML = `<i class="fas fa-${isPositive ? 'arrow-up' : 'arrow-down'}"></i> ${isPositive ? '+' : ''}${data.change.toFixed(2)}%`;
                     changeElement.className = `pair-change ${isPositive ? 'positive' : 'negative'}`;
                     
                     // Flash animation
@@ -1953,8 +1909,8 @@
             if (buyPrice) buyPrice.value = `$${formatPrice(data.price, symbol)}`;
             if (sellPrice) sellPrice.value = `$${formatPrice(data.price, symbol)}`;
             
-            const isPositive = parseFloat(data.change) >= 0;
-            const changeText = `${isPositive ? '+' : ''}${data.change}%`;
+            const isPositive = data.change >= 0;
+            const changeText = `${isPositive ? '+' : ''}${data.change.toFixed(2)}%`;
             
             if (buyPriceChange) {
                 buyPriceChange.textContent = changeText;
@@ -1978,6 +1934,7 @@
             
             container.innerHTML = '';
             
+            // Filter portfolio by current account type
             const filteredPortfolio = userPortfolio.filter(item => 
                 (currentAccountType === 'funding' && (!item.account_type || item.account_type === 'funding')) ||
                 (currentAccountType === 'demo' && item.account_type === 'demo')
@@ -2007,7 +1964,7 @@
                 
                 const currentValue = item.amount * coinData.price;
                 const profitLoss = currentValue - (item.amount * item.purchase_price);
-                const profitLossPercent = item.purchase_price > 0 ? (profitLoss / (item.amount * item.purchase_price)) * 100 : 0;
+                const profitLossPercent = (profitLoss / (item.amount * item.purchase_price)) * 100;
                 const isPositive = profitLoss >= 0;
                 
                 const portfolioItem = document.createElement('div');
@@ -2031,14 +1988,8 @@
         }
 
         function updatePortfolioValues() {
-            // Update portfolio change percentage
-            const portfolioChangeElement = document.getElementById('portfolioChange');
-            if (portfolioChangeElement) {
-                const randomChange = (Math.random() * 5 - 2.5).toFixed(2);
-                const isPositive = parseFloat(randomChange) >= 0;
-                portfolioChangeElement.textContent = `${isPositive ? '+' : ''}${randomChange}%`;
-                portfolioChangeElement.className = isPositive ? 'positive' : 'negative';
-            }
+            // This would calculate total portfolio value
+            // Implement as needed
         }
 
         function updateTransactionsDisplay() {
@@ -2100,130 +2051,48 @@
             
             container.innerHTML = '';
             
-            // Generate some sample activities if no real data
-            if (userTransactions.length === 0) {
-                const sampleActivities = [
-                    { type: 'deposit', amount: 1000, time: '2 hours ago' },
-                    { type: 'buy', amount: 500, time: '4 hours ago' },
-                    { type: 'sell', amount: 250, time: '1 day ago' },
-                    { type: 'withdrawal', amount: 300, time: '2 days ago' }
-                ];
+            userTransactions.slice(0, 10).forEach(transaction => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
                 
-                sampleActivities.forEach((activity, index) => {
-                    addActivityItem(activity, index);
-                });
-                return;
-            }
-            
-            userTransactions.slice(0, 10).forEach((transaction, index) => {
-                addActivityItem(transaction, index);
+                const isPositive = transaction.type === 'deposit' || transaction.type === 'buy';
+                const valuePrefix = isPositive ? '+' : '-';
+                const time = new Date(transaction.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const date = new Date(transaction.created_at).toLocaleDateString();
+                
+                const activityIcons = {
+                    'deposit': { icon: 'fa-plus-circle', color: 'var(--primary)', text: 'Deposited' },
+                    'withdrawal': { icon: 'fa-external-link-alt', color: 'var(--warning)', text: 'Withdrew' },
+                    'buy': { icon: 'fa-shopping-cart', color: 'var(--success)', text: 'Bought' },
+                    'sell': { icon: 'fa-dollar-sign', color: 'var(--danger)', text: 'Sold' }
+                };
+                
+                const activity = activityIcons[transaction.type] || { icon: 'fa-exchange-alt', color: 'var(--primary)', text: 'Transaction' };
+                
+                activityItem.innerHTML = `
+                    <div class="activity-info">
+                        <div class="activity-icon" style="background: ${activity.color}20; color: ${activity.color};">
+                            <i class="fas ${activity.icon}"></i>
+                        </div>
+                        <div class="activity-details">
+                            <h4>${activity.text} $${transaction.amount.toFixed(2)}</h4>
+                            <p>${date} ${time}</p>
+                        </div>
+                    </div>
+                    <div class="activity-amount ${isPositive ? 'positive-amount' : 'negative-amount'}">
+                        ${valuePrefix}$${transaction.amount.toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(activityItem);
             });
         }
 
-        function addActivityItem(activity, index) {
-            const container = document.getElementById('activityList');
-            const isPositive = activity.type === 'deposit' || activity.type === 'buy';
-            const valuePrefix = isPositive ? '+' : '-';
-            const time = activity.created_at ? 
-                new Date(activity.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
-                activity.time || 'Just now';
-            const date = activity.created_at ? 
-                new Date(activity.created_at).toLocaleDateString() : 
-                new Date().toLocaleDateString();
-            
-            const activityIcons = {
-                'deposit': { icon: 'fa-plus-circle', color: 'var(--primary)', text: 'Deposited' },
-                'withdrawal': { icon: 'fa-external-link-alt', color: 'var(--warning)', text: 'Withdrew' },
-                'buy': { icon: 'fa-shopping-cart', color: 'var(--success)', text: 'Bought' },
-                'sell': { icon: 'fa-dollar-sign', color: 'var(--danger)', text: 'Sold' }
-            };
-            
-            const activityType = activityIcons[activity.type] || { icon: 'fa-exchange-alt', color: 'var(--primary)', text: 'Transaction' };
-            
-            const activityItem = document.createElement('div');
-            activityItem.className = 'activity-item';
-            activityItem.style.animationDelay = `${index * 0.1}s`;
-            activityItem.innerHTML = `
-                <div class="activity-info">
-                    <div class="activity-icon" style="background: ${activityType.color}20; color: ${activityType.color};">
-                        <i class="fas ${activityType.icon}"></i>
-                    </div>
-                    <div class="activity-details">
-                        <h4>${activityType.text} $${activity.amount.toFixed(2)}</h4>
-                        <p>${date} ${time}</p>
-                    </div>
-                </div>
-                <div class="activity-amount ${isPositive ? 'positive-amount' : 'negative-amount'}">
-                    ${valuePrefix}$${activity.amount.toFixed(2)}
-                </div>
-            `;
-            container.appendChild(activityItem);
-        }
-
-        // ========== CHART FUNCTIONS - FIXED ==========
+        // ========== CHART FUNCTIONS ==========
         async function loadChartData() {
-            showChartLoading(true);
-            
-            try {
-                // Try API first
-                const data = await apiRequest(`/market/chart/${selectedCoin}/${timeframe}`);
-                if (data && data.length > 0) {
-                    renderChart(data);
-                } else {
-                    // Fallback to generated data
-                    const generatedData = generateChartData();
-                    renderChart(generatedData);
-                }
-            } catch (error) {
-                console.error('Failed to load chart data:', error);
-                // Use generated data as fallback
-                const generatedData = generateChartData();
-                renderChart(generatedData);
-            } finally {
-                showChartLoading(false);
+            const data = await apiRequest(`/market/chart/${selectedCoin}/${timeframe}`);
+            if (data && data.length > 0) {
+                renderChart(data);
             }
-        }
-
-        function generateChartData() {
-            const basePrice = cryptoData[selectedCoin]?.price || 1000;
-            const range = priceRanges[selectedCoin] || { min: basePrice * 0.9, max: basePrice * 1.1, volatility: 0.02 };
-            const data = [];
-            
-            let points = 100;
-            let timeUnit = 60000; // 1 minute in milliseconds
-            
-            switch(timeframe) {
-                case '1h': points = 60; timeUnit = 60000; break; // 1 minute intervals
-                case '1d': points = 24; timeUnit = 3600000; break; // 1 hour intervals
-                case '1w': points = 7; timeUnit = 86400000; break; // 1 day intervals
-                case '1m': points = 30; timeUnit = 86400000; break; // 1 day intervals
-                case '1y': points = 12; timeUnit = 2592000000; break; // 1 month intervals
-            }
-            
-            let currentPrice = basePrice;
-            let currentTime = Date.now() - (points * timeUnit);
-            
-            for (let i = 0; i < points; i++) {
-                const change = (Math.random() - 0.5) * range.volatility;
-                const newPrice = currentPrice * (1 + change);
-                const high = Math.max(currentPrice, newPrice) * (1 + Math.random() * range.volatility * 0.5);
-                const low = Math.min(currentPrice, newPrice) * (1 - Math.random() * range.volatility * 0.5);
-                const open = currentPrice;
-                const close = newPrice;
-                
-                data.push({
-                    x: currentTime,
-                    o: open,
-                    h: high,
-                    l: low,
-                    c: close
-                });
-                
-                currentPrice = newPrice;
-                currentTime += timeUnit;
-            }
-            
-            return data;
         }
 
         function renderChart(chartData) {
@@ -2233,87 +2102,36 @@
                 priceChart.destroy();
             }
             
-            const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
-            const positiveColor = '#00ff88';
-            const negativeColor = '#ff006e';
-            
-            // Register zoom plugin
-            Chart.register(window['chartjs-plugin-zoom'].default || window['chartjs-plugin-zoom']);
-            
             if (chartType === 'candlestick') {
-                // For candlestick-like chart using line chart with custom styling
-                const data = chartData.map(point => ({
-                    x: point.x,
-                    y: point.c,
-                    o: point.o,
-                    h: point.h,
-                    l: point.l
+                // Convert data for candlestick chart
+                const candlestickData = chartData.map(point => ({
+                    t: new Date(point.time),
+                    o: point.open,
+                    h: point.high,
+                    l: point.low,
+                    c: point.close
                 }));
                 
                 priceChart = new Chart(ctx, {
-                    type: 'line',
+                    type: 'candlestick',
                     data: {
                         datasets: [{
                             label: `${selectedCoin} Price`,
-                            data: data,
-                            borderColor: coinColor,
-                            backgroundColor: `${coinColor}20`,
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.1,
-                            pointRadius: 0,
-                            segment: {
-                                borderColor: ctx => {
-                                    const index = ctx.p1DataIndex;
-                                    const point = data[index];
-                                    return point.c >= point.o ? positiveColor : negativeColor;
-                                }
-                            }
+                            data: candlestickData,
+                            color: {
+                                up: '#00ff88',
+                                down: '#ff006e',
+                                unchanged: '#999999'
+                            },
+                            borderColor: 'rgba(0, 240, 255, 0.5)',
+                            borderWidth: 1
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
                         plugins: {
-                            legend: { 
-                                display: false 
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        const point = data[context.dataIndex];
-                                        return [
-                                            `Open: $${point.o.toFixed(2)}`,
-                                            `High: $${point.h.toFixed(2)}`,
-                                            `Low: $${point.l.toFixed(2)}`,
-                                            `Close: $${point.c.toFixed(2)}`
-                                        ];
-                                    }
-                                }
-                            },
-                            zoom: {
-                                pan: {
-                                    enabled: true,
-                                    mode: 'x',
-                                    modifierKey: 'ctrl'
-                                },
-                                zoom: {
-                                    wheel: {
-                                        enabled: true,
-                                        modifierKey: 'ctrl'
-                                    },
-                                    pinch: {
-                                        enabled: true
-                                    },
-                                    mode: 'x'
-                                }
-                            }
+                            legend: { display: false }
                         },
                         scales: {
                             x: {
@@ -2322,32 +2140,17 @@
                                     unit: timeframe === '1h' ? 'minute' : 
                                           timeframe === '1d' ? 'hour' :
                                           timeframe === '1w' ? 'day' :
-                                          timeframe === '1m' ? 'day' : 'month',
-                                    displayFormats: {
-                                        minute: 'HH:mm',
-                                        hour: 'HH:00',
-                                        day: 'MMM dd',
-                                        month: 'MMM yyyy'
-                                    }
+                                          timeframe === '1m' ? 'day' : 'month'
                                 },
-                                grid: { 
-                                    color: 'rgba(0, 240, 255, 0.1)',
-                                    borderColor: 'rgba(0, 240, 255, 0.2)'
-                                },
-                                ticks: { 
-                                    color: 'rgba(226, 250, 252, 0.7)',
-                                    maxTicksLimit: 10
-                                }
+                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
                             },
                             y: {
                                 position: 'right',
-                                grid: { 
-                                    color: 'rgba(0, 240, 255, 0.1)',
-                                    borderColor: 'rgba(0, 240, 255, 0.2)'
-                                },
+                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
                                 ticks: { 
                                     color: 'rgba(226, 250, 252, 0.7)',
-                                    callback: value => '$' + formatPrice(value, selectedCoin)
+                                    callback: value => '$' + value.toLocaleString()
                                 }
                             }
                         }
@@ -2355,17 +2158,19 @@
                 });
             } else {
                 // Line chart
-                const data = chartData.map(point => ({
-                    x: point.x,
-                    y: point.c
+                const lineData = chartData.map(point => ({
+                    x: new Date(point.time),
+                    y: point.close
                 }));
+                
+                const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
                 
                 priceChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         datasets: [{
                             label: `${selectedCoin} Price`,
-                            data: data,
+                            data: lineData,
                             borderColor: coinColor,
                             backgroundColor: `${coinColor}20`,
                             borderWidth: 2,
@@ -2377,112 +2182,26 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false
-                        },
                         plugins: {
-                            legend: { 
-                                display: false 
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        return `${selectedCoin}: $${formatPrice(context.parsed.y, selectedCoin)}`;
-                                    }
-                                }
-                            },
-                            zoom: {
-                                pan: {
-                                    enabled: true,
-                                    mode: 'x',
-                                    modifierKey: 'ctrl'
-                                },
-                                zoom: {
-                                    wheel: {
-                                        enabled: true,
-                                        modifierKey: 'ctrl'
-                                    },
-                                    pinch: {
-                                        enabled: true
-                                    },
-                                    mode: 'x'
-                                }
-                            }
+                            legend: { display: false }
                         },
                         scales: {
                             x: {
                                 type: 'time',
-                                time: {
-                                    unit: timeframe === '1h' ? 'minute' : 
-                                          timeframe === '1d' ? 'hour' :
-                                          timeframe === '1w' ? 'day' :
-                                          timeframe === '1m' ? 'day' : 'month',
-                                    displayFormats: {
-                                        minute: 'HH:mm',
-                                        hour: 'HH:00',
-                                        day: 'MMM dd',
-                                        month: 'MMM yyyy'
-                                    }
-                                },
-                                grid: { 
-                                    color: 'rgba(0, 240, 255, 0.1)',
-                                    borderColor: 'rgba(0, 240, 255, 0.2)'
-                                },
-                                ticks: { 
-                                    color: 'rgba(226, 250, 252, 0.7)',
-                                    maxTicksLimit: 10
-                                }
+                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
+                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
                             },
                             y: {
-                                position: 'right',
-                                grid: { 
-                                    color: 'rgba(0, 240, 255, 0.1)',
-                                    borderColor: 'rgba(0, 240, 255, 0.2)'
-                                },
+                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
                                 ticks: { 
                                     color: 'rgba(226, 250, 252, 0.7)',
-                                    callback: value => '$' + formatPrice(value, selectedCoin)
+                                    callback: value => '$' + value.toLocaleString()
                                 }
                             }
                         }
                     }
                 });
             }
-            
-            // Add chart instructions
-            addChartInstructions();
-        }
-
-        function showChartLoading(show) {
-            const overlay = document.getElementById('chartOverlay');
-            if (overlay) {
-                overlay.style.display = show ? 'flex' : 'none';
-            }
-        }
-
-        function addChartInstructions() {
-            // Remove existing instructions
-            const existingInstructions = document.querySelector('.chart-instructions');
-            if (existingInstructions) {
-                existingInstructions.remove();
-            }
-            
-            const instructions = document.createElement('div');
-            instructions.className = 'chart-instructions';
-            instructions.style.cssText = `
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                color: rgba(226, 250, 252, 0.5);
-                font-size: 0.7rem;
-                z-index: 5;
-            `;
-            instructions.innerHTML = 'Hold Ctrl + Scroll to zoom • Hold Ctrl + Drag to pan';
-            
-            document.querySelector('.trading-chart').appendChild(instructions);
         }
 
         // ========== TRADING FUNCTIONS ==========
@@ -2505,6 +2224,7 @@
             const symbol = document.getElementById('sellCoin').value;
             const price = cryptoData[symbol]?.price || 0;
             
+            // Find user's holdings for this coin in current account
             const holding = userPortfolio.find(p => p.coin_symbol === symbol && 
                 ((currentAccountType === 'funding' && (!p.account_type || p.account_type === 'funding')) ||
                  (currentAccountType === 'demo' && p.account_type === 'demo')));
@@ -2534,19 +2254,75 @@
                 return;
             }
             
-            showNotification('info', 'Trade Executed', `${type === 'buy' ? 'Buy' : 'Sell'} order placed for ${amount} ${symbol}`);
+            const data = {
+                type: type,
+                symbol: symbol,
+                amount: amount,
+                account_type: currentAccountType,
+                prediction: type === 'buy' ? currentPrediction : null
+            };
             
-            // Update form
-            if (type === 'buy') {
-                document.getElementById('buyAmount').value = '100';
-            } else {
-                document.getElementById('sellAmount').value = '0.1';
+            const result = await apiRequest('/trade', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            
+            if (result) {
+                const message = type === 'buy' 
+                    ? `Bought ${formatAmount((amount - (amount * 0.001)) / cryptoData[symbol]?.price, symbol)} ${symbol} with ${currentAccountType} account`
+                    : `Sold ${amount} ${symbol} for $${((amount * cryptoData[symbol]?.price) - (amount * cryptoData[symbol]?.price * 0.001)).toFixed(2)}`;
+                
+                showNotification('success', 'Trade Executed', message);
+                
+                // Update user data
+                currentUser.funding_balance = result.funding_balance || currentUser.funding_balance;
+                currentUser.demo_balance = result.demo_balance || currentUser.demo_balance;
+                localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+                updateUserDisplay();
+                
+                // Reload portfolio and transactions
+                loadPortfolio();
+                loadTransactions();
+                loadTradeHistory();
+                
+                // Reset form
+                if (type === 'buy') {
+                    document.getElementById('buyAmount').value = '100';
+                } else {
+                    document.getElementById('sellAmount').value = '0.1';
+                }
+                updateBuyCalculation();
+                updateSellCalculation();
             }
-            updateBuyCalculation();
-            updateSellCalculation();
         }
 
         // ========== CHAT FUNCTIONS ==========
+        function addInitialChatMessages() {
+            const initialMessages = [
+                "Welcome to QuantumCoin! Start trading now!",
+                "BTC looking bullish today!",
+                "Just made 5% profit on ETH!",
+                "Market seems volatile today",
+                "Great platform! Very user friendly"
+            ];
+            
+            let delay = 1000; // Start with 1 second delay
+            
+            initialMessages.forEach((message, index) => {
+                setTimeout(() => {
+                    const randomUsername = `Trader${Math.floor(Math.random() * 1000)}`;
+                    addChatMessage({
+                        userId: 0,
+                        username: randomUsername,
+                        message: message,
+                        timestamp: new Date().toISOString()
+                    });
+                }, delay);
+                
+                delay += 60000; // Add 60 seconds between messages
+            });
+        }
+
         function addChatMessage(message) {
             const container = document.getElementById('chatMessages');
             if (!container) return;
@@ -2574,16 +2350,7 @@
             
             container.innerHTML = '';
             
-            // Add sample chat messages
-            const sampleMessages = [
-                { username: 'CryptoTrader', message: 'ETH looking strong today!', timestamp: new Date(Date.now() - 300000).toISOString() },
-                { username: 'BullMarket', message: 'Just bought more BTC at $42,500', timestamp: new Date(Date.now() - 600000).toISOString() },
-                { username: 'QuantumUser', message: 'Great platform, very smooth!', timestamp: new Date(Date.now() - 900000).toISOString() },
-                { username: 'DayTrader', message: 'Made 5% on SOL today', timestamp: new Date(Date.now() - 1200000).toISOString() },
-                { username: 'HODLer', message: 'Long term holding BTC and ETH', timestamp: new Date(Date.now() - 1500000).toISOString() }
-            ];
-            
-            sampleMessages.forEach(message => {
+            chatMessages.forEach(message => {
                 addChatMessage(message);
             });
         }
@@ -2592,6 +2359,7 @@
             const onlineCountElement = document.getElementById('onlineCount');
             if (!onlineCountElement) return;
             
+            // Simulate online users with random fluctuations
             const randomChange = Math.floor(Math.random() * 10) - 5;
             onlineCount = Math.max(100, onlineCount + randomChange);
             onlineCountElement.textContent = onlineCount;
@@ -2601,36 +2369,13 @@
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
             
-            if (message) {
-                const chatMessage = {
-                    userId: currentUser?.id || 0,
-                    username: currentUser?.username || 'Trader',
-                    message: message,
-                    timestamp: new Date().toISOString()
-                };
-                
-                addChatMessage(chatMessage);
+            if (message && socket && currentUser) {
+                socket.emit('chat_message', {
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    message: message
+                });
                 input.value = '';
-                
-                // Simulate response
-                setTimeout(() => {
-                    const responses = [
-                        'Interesting point!',
-                        'I agree with that analysis',
-                        'What do others think?',
-                        'Good trading today!',
-                        'Market is volatile'
-                    ];
-                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                    const randomUser = `Trader${Math.floor(Math.random() * 1000)}`;
-                    
-                    addChatMessage({
-                        userId: 0,
-                        username: randomUser,
-                        message: randomResponse,
-                        timestamp: new Date().toISOString()
-                    });
-                }, 1000);
             }
         }
 
@@ -2652,6 +2397,7 @@
                     document.getElementById('fundingBalanceCard').classList.toggle('active', currentAccountType === 'funding');
                     document.getElementById('demoBalanceCard').classList.toggle('active', currentAccountType === 'demo');
                     
+                    // Update indicators
                     const indicator = document.getElementById('currentAccountIndicator');
                     const portfolioIndicator = document.getElementById('portfolioAccountIndicator');
                     
@@ -2667,6 +2413,7 @@
                         portfolioIndicator.className = 'account-indicator indicator-demo';
                     }
                     
+                    // Reload portfolio for selected account
                     loadPortfolio();
                 });
             });
@@ -2684,6 +2431,7 @@
                         b.classList.toggle('active', b.dataset.account === currentAccountType);
                     });
                     
+                    // Reload portfolio for selected account
                     loadPortfolio();
                 });
             });
@@ -2791,17 +2539,23 @@
                 }
             });
             
-            // History button
+            // History button - FIXED: Now loads transaction history
             document.getElementById('historyBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 loadTransactions();
-                showNotification('info', 'History Refreshed', 'Transaction history has been updated');
+                loadTradeHistory();
+                showNotification('info', 'History Refreshed', 'Transaction and trade history have been updated');
             });
             
             // Logout
             document.getElementById('logoutBtn').addEventListener('click', function(e) {
                 e.preventDefault();
                 if (confirm('Are you sure you want to logout?')) {
+                    // Call logout API
+                    apiRequest('/auth/logout', {
+                        method: 'POST'
+                    });
+                    
                     localStorage.removeItem('quantumcoin_token');
                     localStorage.removeItem('quantumcoin_user');
                     window.location.href = '/';
@@ -2858,6 +2612,7 @@
             
             document.body.appendChild(notification);
             
+            // Auto remove
             setTimeout(() => {
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => {
@@ -2867,53 +2622,42 @@
                 }, 300);
             }, duration);
             
+            // Add to notifications list
             notifications.unshift({ type, title, message, timestamp: new Date() });
             if (notifications.length > 20) notifications.pop();
             
+            // Update notification count
             const unreadCount = notifications.length;
             document.getElementById('notificationCount').textContent = unreadCount > 9 ? '9+' : unreadCount;
         }
 
         function formatPrice(price, symbol) {
-            if (!price) return '0.00';
-            
-            if (symbol === 'BTC' || symbol === 'ETH' || symbol === 'BNB' || symbol === 'SOL') {
-                return price.toLocaleString('en-US', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                });
-            } else if (symbol === 'DOGE' || symbol === 'XRP' || symbol === 'ADA') {
-                return price.toLocaleString('en-US', { 
-                    minimumFractionDigits: 4, 
-                    maximumFractionDigits: 4 
-                });
-            } else if (symbol === 'SHIB') {
-                return price.toFixed(8);
+            if (price >= 1000) {
+                return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else if (price >= 1) {
+                return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+            } else if (price >= 0.01) {
+                return price.toFixed(4);
+            } else if (price >= 0.0001) {
+                return price.toFixed(6);
             } else {
-                return price.toLocaleString('en-US', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 4 
-                });
+                return price.toFixed(8);
             }
         }
 
         function formatAmount(amount, symbol, forInput = false) {
-            if (!amount) return '0.00';
-            
             if (symbol === 'BTC' || symbol === 'ETH' || symbol === 'BNB') {
-                return forInput ? amount.toFixed(8) : amount.toFixed(6);
+                return forInput ? amount.toFixed(8) : amount.toFixed(6).replace(/\.?0+$/, '');
             } else if (symbol === 'DOGE' || symbol === 'XRP' || symbol === 'ADA') {
-                return forInput ? amount.toFixed(2) : amount.toFixed(2);
+                return forInput ? amount.toFixed(2) : amount.toFixed(2).replace(/\.?0+$/, '');
             } else if (symbol === 'SHIB') {
                 return forInput ? amount.toFixed(0) : amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
             } else {
-                return forInput ? amount.toFixed(4) : amount.toFixed(4);
+                return forInput ? amount.toFixed(4) : amount.toFixed(4).replace(/\.?0+$/, '');
             }
         }
 
         function formatVolume(volume) {
-            if (!volume) return '$0';
-            
             if (volume >= 1000000000) {
                 return `$${(volume / 1000000000).toFixed(2)}B`;
             } else if (volume >= 1000000) {

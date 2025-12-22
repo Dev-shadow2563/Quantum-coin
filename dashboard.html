@@ -1810,6 +1810,27 @@ async function loadMarketData() {
             // Chat history loaded via WebSocket
         }
 
+async function checkWithdrawalNotifications() {
+    try {
+        const response = await apiRequest('/user/notifications');
+        if (response && response.notifications) {
+            const withdrawalNotifications = response.notifications.filter(n => 
+                n.type === 'success' && n.title.includes('Withdrawal Completed')
+            );
+            
+            if (withdrawalNotifications.length > 0) {
+                // Show notification banner
+                showNotificationBanner('✅ Your withdrawal has been completed! Check your wallet.');
+                
+                // Update balance
+                await loadUserData();
+            }
+        }
+    } catch (error) {
+        console.error('Error checking notifications:', error);
+    }
+}
+
         // ========== DISPLAY UPDATES ==========
         function updateUserDisplay() {
             if (!currentUser) return;
@@ -2044,7 +2065,43 @@ async function loadMarketData() {
                 container.appendChild(transactionDiv);
             });
         }
-
+function showNotificationBanner(message) {
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--success), #00cc66);
+        color: var(--darker);
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+    `;
+    
+    banner.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-check-circle"></i>
+            <div>${message}</div>
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="margin-left: auto; background: none; border: none; color: var(--darker); cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(banner);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (banner.parentElement) {
+            banner.remove();
+        }
+    }, 10000);
+}
+        
         function updateActivityDisplay() {
             const container = document.getElementById('activityList');
             if (!container) return;

@@ -371,6 +371,42 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* New styles for withdrawal management */
+        .transaction-details {
+            background: rgba(0, 240, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .detail-label {
+            min-width: 150px;
+            color: rgba(226, 250, 252, 0.7);
+        }
+
+        .detail-value {
+            color: var(--light);
+            font-weight: 500;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+
+        .complete-form {
+            margin-top: 20px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -444,26 +480,79 @@
                 <div class="subtext">Demo Funds: <span id="totalDemo">$0</span></div>
             </div>
             <div class="stat-card">
-                <h3>Pending Deposits</h3>
-                <div class="value" id="pendingDeposits">0</div>
-                <div class="subtext">Amount: <span id="pendingDepositAmount">$0</span></div>
-            </div>
-            <div class="stat-card">
                 <h3>Pending Withdrawals</h3>
                 <div class="value" id="pendingWithdrawals">0</div>
                 <div class="subtext">Amount: <span id="pendingWithdrawalAmount">$0</span></div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Deposits</h3>
+                <div class="value" id="pendingDeposits">0</div>
+                <div class="subtext">Amount: <span id="pendingDepositAmount">$0</span></div>
             </div>
         </div>
 
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab active" data-tab="transactions">Pending Transactions</button>
+            <button class="tab active" data-tab="withdrawals">Pending Withdrawals</button>
+            <button class="tab" data-tab="deposits">Pending Deposits</button>
+            <button class="tab" data-tab="completed">Completed</button>
             <button class="tab" data-tab="users">All Users</button>
-            <button class="tab" data-tab="approved">Approved Transactions</button>
         </div>
 
-        <!-- Transactions Table -->
-        <div id="transactionsTab" class="tab-content">
+        <!-- Pending Withdrawals Table -->
+        <div id="withdrawalsTab" class="tab-content">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Network</th>
+                            <th>Wallet Address</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawalsTable">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
+                                Loading pending withdrawals...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Deposits Table -->
+        <div id="depositsTab" class="tab-content" style="display: none;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depositsTable">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
+                                Loading pending deposits...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Completed Transactions -->
+        <div id="completedTab" class="tab-content" style="display: none;">
             <div class="table-container">
                 <table>
                     <thead>
@@ -474,13 +563,13 @@
                             <th>Amount</th>
                             <th>Date</th>
                             <th>Status</th>
-                            <th>Actions</th>
+                            <th>Admin</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionsTable">
+                    <tbody id="completedTable">
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
-                                Loading transactions...
+                                Loading completed transactions...
                             </td>
                         </tr>
                     </tbody>
@@ -512,59 +601,41 @@
                 </table>
             </div>
         </div>
-
-        <!-- Approved Transactions -->
-        <div id="approvedTab" class="tab-content" style="display: none;">
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>User</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Approved By</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="approvedTable">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
-                                Loading approved transactions...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
-    <!-- Approval Modal -->
-    <div class="modal" id="approvalModal">
+    <!-- Withdrawal Complete Modal -->
+    <div class="modal" id="withdrawalModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Approve Transaction</h2>
-                <button class="modal-close" id="closeModal">&times;</button>
+                <h2>Complete Withdrawal</h2>
+                <button class="modal-close" id="closeWithdrawalModal">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="modalTransactionDetails">
-                    <!-- Transaction details will be loaded here -->
+                <div id="withdrawalDetails">
+                    <!-- Withdrawal details will be loaded here -->
                 </div>
-                <div class="form-group">
-                    <label for="notes">Notes (Optional)</label>
-                    <textarea id="notes" class="form-control" rows="3" placeholder="Add any notes..."></textarea>
+                <div class="complete-form">
+                    <div class="form-group">
+                        <label for="transactionHash">Transaction Hash</label>
+                        <input type="text" id="transactionHash" class="form-control" 
+                               placeholder="Enter the blockchain transaction hash" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminNotes">Notes (Optional)</label>
+                        <textarea id="adminNotes" class="form-control" rows="3" 
+                                  placeholder="Add any notes for the user..."></textarea>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="action-btn reject-btn" id="rejectBtn">Reject</button>
-                <button class="action-btn approve-btn" id="approveBtn">Approve</button>
+                <button class="action-btn reject-btn" id="rejectWithdrawalBtn">Reject Withdrawal</button>
+                <button class="action-btn approve-btn" id="completeWithdrawalBtn">Mark as Sent</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://quantum-coin-backend.onrender.com';
+        const API_URL = 'https://quantum-coin-backend.onrender.com/api';
         let adminToken = null;
         let currentTransaction = null;
 
@@ -576,34 +647,37 @@
         const logoutBtn = document.getElementById('logoutBtn');
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
-        const approvalModal = document.getElementById('approvalModal');
-        const closeModal = document.getElementById('closeModal');
-        const approveBtn = document.getElementById('approveBtn');
-        const rejectBtn = document.getElementById('rejectBtn');
-        const notesInput = document.getElementById('notes');
-        const modalTransactionDetails = document.getElementById('modalTransactionDetails');
-
+        
+        // Tables
+        const withdrawalsTable = document.getElementById('withdrawalsTable');
+        const depositsTable = document.getElementById('depositsTable');
+        const completedTable = document.getElementById('completedTable');
+        const usersTable = document.getElementById('usersTable');
+        
         // Stats elements
         const totalUsers = document.getElementById('totalUsers');
         const activeToday = document.getElementById('activeToday');
         const totalFunding = document.getElementById('totalFunding');
         const totalDemo = document.getElementById('totalDemo');
-        const pendingDeposits = document.getElementById('pendingDeposits');
-        const pendingDepositAmount = document.getElementById('pendingDepositAmount');
         const pendingWithdrawals = document.getElementById('pendingWithdrawals');
         const pendingWithdrawalAmount = document.getElementById('pendingWithdrawalAmount');
-
-        // Tables
-        const transactionsTable = document.getElementById('transactionsTable');
-        const usersTable = document.getElementById('usersTable');
-        const approvedTable = document.getElementById('approvedTable');
+        const pendingDeposits = document.getElementById('pendingDeposits');
+        const pendingDepositAmount = document.getElementById('pendingDepositAmount');
+        
+        // Modal elements
+        const withdrawalModal = document.getElementById('withdrawalModal');
+        const closeWithdrawalModal = document.getElementById('closeWithdrawalModal');
+        const withdrawalDetails = document.getElementById('withdrawalDetails');
+        const transactionHashInput = document.getElementById('transactionHash');
+        const adminNotesInput = document.getElementById('adminNotes');
+        const completeWithdrawalBtn = document.getElementById('completeWithdrawalBtn');
+        const rejectWithdrawalBtn = document.getElementById('rejectWithdrawalBtn');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             adminToken = localStorage.getItem('quantumcoin_admin_token');
             
             if (adminToken) {
-                // Verify token
                 verifyAdminToken();
             } else {
                 showLoginView();
@@ -641,33 +715,39 @@
                     document.getElementById(`${tabName}Tab`).style.display = 'block';
                     
                     // Load data for this tab
-                    if (tabName === 'transactions') {
-                        loadPendingTransactions();
+                    if (tabName === 'withdrawals') {
+                        loadPendingWithdrawals();
+                    } else if (tabName === 'deposits') {
+                        loadPendingDeposits();
+                    } else if (tabName === 'completed') {
+                        loadCompletedTransactions();
                     } else if (tabName === 'users') {
                         loadAllUsers();
-                    } else if (tabName === 'approved') {
-                        loadApprovedTransactions();
                     }
                 });
             });
             
-            // Modal
-            closeModal.addEventListener('click', function() {
-                approvalModal.style.display = 'none';
+            // Modal close
+            closeWithdrawalModal.addEventListener('click', function() {
+                withdrawalModal.style.display = 'none';
             });
             
-            approveBtn.addEventListener('click', function() {
-                approveTransaction('approve');
+            // Complete withdrawal
+            completeWithdrawalBtn.addEventListener('click', function() {
+                completeWithdrawal();
             });
             
-            rejectBtn.addEventListener('click', function() {
-                approveTransaction('reject');
+            // Reject withdrawal
+            rejectWithdrawalBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to reject this withdrawal? Funds will be returned to the user.')) {
+                    rejectWithdrawal();
+                }
             });
             
             // Close modal on outside click
             window.addEventListener('click', function(e) {
-                if (e.target === approvalModal) {
-                    approvalModal.style.display = 'none';
+                if (e.target === withdrawalModal) {
+                    withdrawalModal.style.display = 'none';
                 }
             });
         }
@@ -710,7 +790,7 @@
             if (result) {
                 showAdminView();
                 loadDashboardStats();
-                loadPendingTransactions();
+                loadPendingWithdrawals();
             } else {
                 showLoginView();
             }
@@ -739,7 +819,7 @@
                 localStorage.setItem('quantumcoin_admin_token', adminToken);
                 showAdminView();
                 loadDashboardStats();
-                loadPendingTransactions();
+                loadPendingWithdrawals();
                 
             } catch (error) {
                 loginError.textContent = error.message;
@@ -762,26 +842,122 @@
             const stats = await apiRequest('/admin/stats');
             if (stats) {
                 totalUsers.textContent = stats.total_users || 0;
-                activeToday.textContent = stats.active_today || 0;
                 totalFunding.textContent = `$${(stats.total_funding || 0).toFixed(2)}`;
-                totalDemo.textContent = `$${(stats.total_demo || 0).toFixed(2)}`;
-                pendingDeposits.textContent = stats.pending_deposits || 0;
-                pendingDepositAmount.textContent = `$${(stats.pending_deposit_amount || 0).toFixed(2)}`;
                 pendingWithdrawals.textContent = stats.pending_withdrawals || 0;
                 pendingWithdrawalAmount.textContent = `$${(stats.pending_withdrawal_amount || 0).toFixed(2)}`;
+                pendingDeposits.textContent = stats.pending_deposits || 0;
+                pendingDepositAmount.textContent = `$${(stats.pending_deposit_amount || 0).toFixed(2)}`;
+                // Add these fields if they exist in your API response
+                if (stats.active_today !== undefined) {
+                    activeToday.textContent = stats.active_today || 0;
+                }
+                if (stats.total_demo !== undefined) {
+                    totalDemo.textContent = `$${(stats.total_demo || 0).toFixed(2)}`;
+                }
             }
         }
 
-        async function loadPendingTransactions() {
-            const transactions = await apiRequest('/admin/transactions/pending');
+        async function loadPendingWithdrawals() {
+            const withdrawals = await apiRequest('/admin/withdrawals/pending');
+            if (withdrawals) {
+                withdrawalsTable.innerHTML = '';
+                
+                if (withdrawals.length === 0) {
+                    withdrawalsTable.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
+                                No pending withdrawals
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                withdrawals.forEach(withdrawal => {
+                    const row = document.createElement('tr');
+                    const date = new Date(withdrawal.created_at).toLocaleDateString();
+                    const time = new Date(withdrawal.created_at).toLocaleTimeString();
+                    const walletShort = withdrawal.wallet_address ? 
+                        withdrawal.wallet_address.substring(0, 10) + '...' + 
+                        withdrawal.wallet_address.substring(withdrawal.wallet_address.length - 5) : 
+                        'N/A';
+                    
+                    row.innerHTML = `
+                        <td>${withdrawal.id}</td>
+                        <td>${withdrawal.username}</td>
+                        <td>$${withdrawal.amount.toFixed(2)}</td>
+                        <td>${withdrawal.network || 'N/A'}</td>
+                        <td title="${withdrawal.wallet_address || ''}">${walletShort}</td>
+                        <td>${date} ${time}</td>
+                        <td><span class="badge badge-pending">Pending</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn approve-btn" 
+                                        onclick="openWithdrawalModal(${withdrawal.id})">
+                                    Process
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    withdrawalsTable.appendChild(row);
+                });
+            }
+        }
+
+        async function loadPendingDeposits() {
+            const deposits = await apiRequest('/admin/transactions/pending');
+            if (deposits) {
+                depositsTable.innerHTML = '';
+                
+                if (deposits.length === 0) {
+                    depositsTable.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
+                                No pending deposits
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                deposits.forEach(deposit => {
+                    const row = document.createElement('tr');
+                    const date = new Date(deposit.created_at).toLocaleDateString();
+                    
+                    row.innerHTML = `
+                        <td>${deposit.id}</td>
+                        <td>${deposit.username}</td>
+                        <td>$${deposit.amount.toFixed(2)}</td>
+                        <td>${date}</td>
+                        <td><span class="badge badge-pending">Pending</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn approve-btn" 
+                                        onclick="approveDeposit(${deposit.id})">
+                                    Approve
+                                </button>
+                                <button class="action-btn reject-btn" 
+                                        onclick="rejectDeposit(${deposit.id})">
+                                    Reject
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    depositsTable.appendChild(row);
+                });
+            }
+        }
+
+        async function loadCompletedTransactions() {
+            const transactions = await apiRequest('/admin/withdrawals');
             if (transactions) {
-                transactionsTable.innerHTML = '';
+                completedTable.innerHTML = '';
                 
                 if (transactions.length === 0) {
-                    transactionsTable.innerHTML = `
+                    completedTable.innerHTML = `
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
-                                No pending transactions
+                                No completed transactions
                             </td>
                         </tr>
                     `;
@@ -790,27 +966,20 @@
                 
                 transactions.forEach(transaction => {
                     const row = document.createElement('tr');
-                    const typeClass = transaction.type === 'deposit' ? 'badge-pending' : 'badge-warning';
-                    const typeText = transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal';
                     const date = new Date(transaction.created_at).toLocaleDateString();
-                    const time = new Date(transaction.created_at).toLocaleTimeString();
+                    const typeText = transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal';
+                    const statusClass = transaction.status === 'completed' ? 'badge-approved' : 'badge-rejected';
                     
                     row.innerHTML = `
                         <td>${transaction.id}</td>
                         <td>${transaction.username}</td>
-                        <td><span class="badge ${typeClass}">${typeText}</span></td>
+                        <td>${typeText}</td>
                         <td>$${transaction.amount.toFixed(2)}</td>
-                        <td>${date} ${time}</td>
-                        <td><span class="badge badge-pending">Pending</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn approve-btn" onclick="openApprovalModal(${transaction.id}, '${transaction.type}', ${transaction.amount}, '${transaction.username}')">
-                                    Review
-                                </button>
-                            </div>
-                        </td>
+                        <td>${date}</td>
+                        <td><span class="badge ${statusClass}">${transaction.status}</span></td>
+                        <td>${transaction.admin_username || 'System'}</td>
                     `;
-                    transactionsTable.appendChild(row);
+                    completedTable.appendChild(row);
                 });
             }
         }
@@ -838,78 +1007,129 @@
             }
         }
 
-        async function loadApprovedTransactions() {
-            const transactions = await apiRequest('/admin/transactions/completed');
-            if (transactions) {
-                approvedTable.innerHTML = '';
+        async function openWithdrawalModal(id) {
+            const withdrawal = await apiRequest(`/admin/withdrawals/${id}`);
+            if (withdrawal) {
+                currentTransaction = withdrawal;
                 
-                if (transactions.length === 0) {
-                    approvedTable.innerHTML = `
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px; color: rgba(226, 250, 252, 0.5);">
-                                No completed transactions
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
+                withdrawalDetails.innerHTML = `
+                    <div class="transaction-details">
+                        <div class="detail-row">
+                            <div class="detail-label">Transaction ID:</div>
+                            <div class="detail-value">${withdrawal.id}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">User:</div>
+                            <div class="detail-value">${withdrawal.username} (${withdrawal.email})</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Amount:</div>
+                            <div class="detail-value">$${withdrawal.amount.toFixed(2)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Network:</div>
+                            <div class="detail-value">${withdrawal.network || 'N/A'}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Wallet Address:</div>
+                            <div class="detail-value wallet-address">${withdrawal.wallet_address || 'N/A'}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Fees:</div>
+                            <div class="detail-value">$${(withdrawal.fees || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Date:</div>
+                            <div class="detail-value">${new Date(withdrawal.created_at).toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
                 
-                transactions.forEach(transaction => {
-                    const row = document.createElement('tr');
-                    const typeClass = transaction.type === 'deposit' ? 'badge-approved' : 'badge-warning';
-                    const statusClass = transaction.status === 'completed' ? 'badge-approved' : 'badge-rejected';
-                    const typeText = transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal';
-                    const date = new Date(transaction.created_at).toLocaleDateString();
-                    
-                    row.innerHTML = `
-                        <td>${transaction.id}</td>
-                        <td>${transaction.username}</td>
-                        <td><span class="badge ${typeClass}">${typeText}</span></td>
-                        <td>$${transaction.amount.toFixed(2)}</td>
-                        <td>${date}</td>
-                        <td>${transaction.admin_username || 'System'}</td>
-                        <td><span class="badge ${statusClass}">${transaction.status}</span></td>
-                    `;
-                    approvedTable.appendChild(row);
-                });
+                transactionHashInput.value = '';
+                adminNotesInput.value = '';
+                withdrawalModal.style.display = 'flex';
             }
         }
 
-        function openApprovalModal(id, type, amount, username) {
-            currentTransaction = { id, type, amount, username };
-            
-            document.getElementById('modalTransactionDetails').innerHTML = `
-                <p><strong>Transaction ID:</strong> ${id}</p>
-                <p><strong>User:</strong> ${username}</p>
-                <p><strong>Type:</strong> ${type}</p>
-                <p><strong>Amount:</strong> $${amount.toFixed(2)}</p>
-                <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-            `;
-            
-            approvalModal.style.display = 'flex';
-            notesInput.value = '';
-        }
-
-        async function approveTransaction(action) {
+        async function completeWithdrawal() {
             if (!currentTransaction) return;
             
-            const endpoint = action === 'approve' 
-                ? `/admin/transactions/${currentTransaction.id}/approve`
-                : `/admin/transactions/${currentTransaction.id}/reject`;
+            const transactionHash = transactionHashInput.value.trim();
+            const notes = adminNotesInput.value.trim();
             
-            const result = await apiRequest(endpoint, {
+            if (!transactionHash) {
+                alert('Please enter the transaction hash');
+                return;
+            }
+            
+            const result = await apiRequest(`/admin/withdrawals/${currentTransaction.id}/complete`, {
                 method: 'POST',
-                body: JSON.stringify({ notes: notesInput.value })
+                body: JSON.stringify({ 
+                    transaction_hash: transactionHash,
+                    notes: notes
+                })
             });
             
-            if (result) {
-                approvalModal.style.display = 'none';
-                alert(`${action === 'approve' ? 'Approved' : 'Rejected'} successfully`);
+            if (result && result.success) {
+                withdrawalModal.style.display = 'none';
+                alert('Withdrawal marked as completed successfully');
                 
                 // Refresh data
                 loadDashboardStats();
-                loadPendingTransactions();
-                loadApprovedTransactions();
+                loadPendingWithdrawals();
+                loadCompletedTransactions();
+            }
+        }
+
+        async function rejectWithdrawal() {
+            if (!currentTransaction) return;
+            
+            const notes = adminNotesInput.value.trim() || 'Withdrawal rejected by admin';
+            
+            const result = await apiRequest(`/admin/withdrawals/${currentTransaction.id}/reject`, {
+                method: 'POST',
+                body: JSON.stringify({ notes: notes })
+            });
+            
+            if (result && result.success) {
+                withdrawalModal.style.display = 'none';
+                alert('Withdrawal rejected and funds returned to user');
+                
+                // Refresh data
+                loadDashboardStats();
+                loadPendingWithdrawals();
+                loadCompletedTransactions();
+            }
+        }
+
+        async function approveDeposit(id) {
+            if (confirm('Approve this deposit?')) {
+                const result = await apiRequest(`/admin/transactions/${id}/approve`, {
+                    method: 'POST',
+                    body: JSON.stringify({ notes: 'Deposit approved by admin' })
+                });
+                
+                if (result && result.success) {
+                    alert('Deposit approved successfully');
+                    loadDashboardStats();
+                    loadPendingDeposits();
+                }
+            }
+        }
+
+        async function rejectDeposit(id) {
+            const reason = prompt('Enter rejection reason:');
+            if (reason) {
+                const result = await apiRequest(`/admin/transactions/${id}/reject`, {
+                    method: 'POST',
+                    body: JSON.stringify({ notes: reason })
+                });
+                
+                if (result && result.success) {
+                    alert('Deposit rejected');
+                    loadDashboardStats();
+                    loadPendingDeposits();
+                }
             }
         }
 

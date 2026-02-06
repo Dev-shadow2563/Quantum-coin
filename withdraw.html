@@ -657,7 +657,8 @@
     </div>
 
     <script>
-        const API_URL = 'https://quantum-coin-backend.onrender.com/api';
+const API_URL = 'https://quantum-coin-backend.onrender.com';
+await apiRequest('/api/withdraw')
         let token = null;
         let currentUser = null;
         let transactionId = null;
@@ -896,7 +897,7 @@
             submitWithdrawBtn.innerHTML = '<div class="loading-spinner"></div>';
             
             try {
-                const result = await apiRequest('/withdraw', {
+                const result = await apiRequest('/api/withdraw', {
                     method: 'POST',
                     body: JSON.stringify({
                         amount,

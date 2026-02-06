@@ -1597,7 +1597,9 @@
 
     <script>
         // ========== GLOBAL VARIABLES ==========
-        const API_URL = 'https://quantum-coin-backend.onrender.com/api';
+const API_URL = 'https://quantum-coin-backend.onrender.com';
+'Authorization': `Bearer ${token}`,
+    
         const SOCKET_URL = 'https://quantum-coin-backend.onrender.com';
         
         let socket = null;

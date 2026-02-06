@@ -649,7 +649,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://quantum-coin-backend.onrender.com/api';
+        const API_URL = 'https://quantum-coin-backend.onrender.com';
         let token = null;
         let currentUser = null;
         let transactionId = null;
@@ -760,19 +760,18 @@
             summaryBonus.textContent = `$${bonus.toFixed(2)}`;
             summaryTotal.textContent = `$${total.toFixed(2)}`;
         }
-
-        async function apiRequest(endpoint, options = {}) {
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                ...options.headers
-            };
-            
-            try {
-                const response = await fetch(`${API_URL}${endpoint}`, {
-                    ...options,
-                    headers
-                });
+  async function apiRequest(endpoint, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,  // ✅ Correct Bearer format
+            ...options.headers
+        };
+        
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers
+            });
                 
                 if (response.status === 401) {
                     localStorage.removeItem('quantumcoin_token');

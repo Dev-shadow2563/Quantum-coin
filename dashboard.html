@@ -1655,16 +1655,14 @@
 
         // ========== WEB SOCKET ==========
         function initializeWebSocket() {
-            // ✅ FIXED: WebSocket Connection - NOW WORKS
             socket = io(SOCKET_URL);
             
             socket.on('connect', () => {
-                console.log('✅ Connected to server');
                 updateConnectionStatus(true);
-                const userId = currentUser?.id;
-                if (userId) {
-                    socket.emit('join_user_room', userId);
+                if (currentUser && currentUser.id) {
+                    socket.emit('join_user', currentUser.id);
                 }
+                socket.emit('get_chat_history');
             });
             
             socket.on('disconnect', () => {
@@ -1694,17 +1692,19 @@
                 updateChatDisplay();
             });
             
-            // ✅ FIXED: Added WebSocket event handlers from your fixes
+            // Transaction notifications
             socket.on('deposit_approved', (data) => {
                 showNotification('success', 'Deposit Approved', 
                     `$${data.totalAmount.toFixed(2)} added to your account!`);
                 loadUserData();
+                loadTransactions();
             });
             
             socket.on('withdrawal_approved', (data) => {
                 showNotification('success', 'Withdrawal Complete', 
                     `$${data.amount.toFixed(2)} sent to ${data.network}`);
                 loadUserData();
+                loadTransactions();
             });
             
             // ✅ FIXED: Added receive_message handler
@@ -1738,7 +1738,7 @@
         }
 
         // ========== API CALLS ==========
-        // ✅ FIXED: API Request Function with Bearer Token
+        // ✅ FIXED: Updated apiRequest function with Bearer Token
         async function apiRequest(endpoint, options = {}) {
             const headers = {
                 'Content-Type': 'application/json',
@@ -1781,7 +1781,6 @@
 
         // ✅ FIXED: Market Data Call - NOW WORKS
         async function loadMarketData() {
-            // ✅ Backend endpoint now exists!
             const data = await apiRequest('/api/market/data');
             if (data) {
                 cryptoData = data;
@@ -1793,7 +1792,6 @@
 
         // ✅ FIXED: Portfolio Call - NOW WORKS
         async function loadPortfolio() {
-            // ✅ Backend endpoint now exists!
             const data = await apiRequest('/api/portfolio');
             if (data) {
                 userPortfolio = data;
@@ -1803,7 +1801,6 @@
 
         // ✅ FIXED: Transactions Call - NOW WORKS
         async function loadTransactions() {
-            // ✅ Backend endpoint now exists!
             const data = await apiRequest('/api/transactions');
             if (data) {
                 userTransactions = data;
@@ -1814,7 +1811,6 @@
 
         // ✅ FIXED: Trade History Call - NOW WORKS
         async function loadTradeHistory() {
-            // ✅ Backend endpoint now exists!
             const data = await apiRequest('/api/trade/history');
             if (data) {
                 console.log('Trade history loaded:', data);
@@ -2104,7 +2100,7 @@
 
         // ========== CHART FUNCTIONS ==========
         async function loadChartData() {
-            const data = await apiRequest(`/market/chart/${selectedCoin}/${timeframe}`);
+            const data = await apiRequest(`/api/market/chart/${selectedCoin}/${timeframe}`);
             if (data && data.length > 0) {
                 renderChart(data);
             }
@@ -2277,7 +2273,7 @@
                 prediction: type === 'buy' ? currentPrediction : null
             };
             
-            const result = await apiRequest('/trade', {
+            const result = await apiRequest('/api/trade', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
@@ -2576,7 +2572,7 @@
                 e.preventDefault();
                 if (confirm('Are you sure you want to logout?')) {
                     // Call logout API
-                    apiRequest('/auth/logout', {
+                    apiRequest('/api/auth/logout', {
                         method: 'POST'
                     });
                     

@@ -2132,7 +2132,7 @@
                 }
                 
                 // Send Google token to backend
-                const result = await apiRequest('api/auth/google', 'POST', {
+                const result = await apiRequest('/api/auth/google', 'POST', {
                     credential: response.credential
                 });
                 

@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Load Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1399,7 +1398,6 @@
                 <div class="auth-buttons">
                     <button class="btn btn-login" id="loginBtn">Login</button>
                     <button class="btn btn-signup" id="signupBtn">Sign Up</button>
-                    <button class="btn btn-login logged-in" id="dashboardBtn" style="display: none;" onclick="goToDashboard()">Dashboard</button>
                 </div>
             </nav>
         </div>
@@ -1410,15 +1408,16 @@
         <div class="container">
             <div class="hero">
                 <div class="hero-content">
-                    <h1>The Future of Crypto Trading</h1>
-                    <p>Trade cryptocurrencies with real-time market data, advanced charting tools, and secure transactions.</p>
+                    <h1>Trade Cryptocurrency Like a Pro</h1>
+                    <p>Experience the future of crypto trading with QuantumCoin. Advanced charts, lightning-fast execution, and secure trading environment.</p>
                     <div class="cta-buttons">
                         <button class="cta-btn primary" id="startTradingBtn">Start Trading Now</button>
-                        <button class="cta-btn secondary" onclick="scrollToSection('features')">Learn More</button>
+                        <a href="#features" class="cta-btn secondary">Learn More</a>
                     </div>
                 </div>
                 <div class="hero-image">
                     <div class="crypto-visual" id="cryptoVisual">
+                        <!-- Falling coins will be generated here -->
                         <div class="coin">BTC</div>
                         <div class="coin">ETH</div>
                         <div class="coin">DOGE</div>
@@ -1431,34 +1430,46 @@
                 <h2 class="section-title">Why Choose QuantumCoin?</h2>
                 <div class="features-grid">
                     <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                        <h3>Real-Time Trading</h3>
-                        <p>Trade with live market data and advanced charting tools. Make informed decisions with up-to-the-minute price updates.</p>
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>Live Trading Charts</h3>
+                        <p>Real-time candlestick charts with advanced technical indicators and drawing tools for precise market analysis.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
                         <h3>Secure Transactions</h3>
-                        <p>Your funds are protected with industry-leading security. Bank-level encryption and multi-factor authentication included.</p>
+                        <p>Bank-level security with manual verification for all deposits and withdrawals. Your funds are always safe.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-rocket"></i></div>
-                        <h3>Fast Execution</h3>
-                        <p>Lightning-fast order execution ensures you get the best prices. No delays, no surprises on your trades.</p>
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Instant Execution</h3>
+                        <p>Trade execution in milliseconds. Buy and sell cryptocurrencies at the best available market prices.</p>
                     </div>
                     <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                        <div class="feature-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <h3>Dual Account System</h3>
+                        <p>Trade with real money or practice with our $100,000 demo account. Perfect for both beginners and pros.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3>Mobile Friendly</h3>
+                        <p>Access your trading account from any device. Our platform works perfectly on desktop, tablet, and mobile.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
                         <h3>24/7 Support</h3>
-                        <p>Our dedicated support team is always available to help. Live chat, email, and phone support around the clock.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-coins"></i></div>
-                        <h3>Multiple Cryptocurrencies</h3>
-                        <p>Trade Bitcoin, Ethereum, and thousands of other cryptocurrencies in one platform.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon"><i class="fas fa-gift"></i></div>
-                        <h3>Bonus Rewards</h3>
-                        <p>Get 5% bonus on deposits over $1,000. Start with our demo account with $5,000 free funds.</p>
+                        <p>Round-the-clock customer support via email and live chat. We're here to help you succeed in trading.</p>
                     </div>
                 </div>
             </div>
@@ -1863,14 +1874,6 @@
     </div>
 
     <script>
-        // ✅ FIXED: API_URL WITHOUT /api (removed /api suffix)
-        const API_URL = 'https://quantum-coin-backend.onrender.com';
-        // For local development, uncomment below:
-        // const API_URL = 'http://localhost:5000';
-
-        let token = null;
-        let currentUser = null;
-
         // ========== PAGE NAVIGATION ==========
         const pageSections = document.querySelectorAll('.page-section');
         const navLinks = document.querySelectorAll('.nav-link');
@@ -1916,43 +1919,116 @@
             showPage('home');
         });
 
-        // ✅ FIXED: API Request function with Bearer token
-        async function apiRequest(endpoint, options = {}) {
+        // ========== BACKEND API CONFIGURATION ==========
+        const API_BASE_URL = 'https://quantum-coin-backend.onrender.com';
+        
+        // API Helper Functions
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const url = `${API_BASE_URL}${endpoint}`;
             const headers = {
                 'Content-Type': 'application/json',
-                ...options.headers
             };
-
-            // Add bearer token if user is logged in
+            
+            // Add token to headers if user is logged in
+            const token = localStorage.getItem('quantumcoin_token');
             if (token) {
-                headers['Authorization'] = `Bearer ${token}`; // ✅ FIXED: Added Bearer prefix
+                headers['Authorization'] = `Bearer ${token}`;
             }
-
+            
+            const options = {
+                method,
+                headers,
+                credentials: 'include'
+            };
+            
+            if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+                options.body = JSON.stringify(data);
+            }
+            
             try {
-                const response = await fetch(`${API_URL}${endpoint}`, {
-                    ...options,
-                    headers
-                });
-
+                console.log(`API Request: ${method} ${url}`);
+                const response = await fetch(url, options);
+                
+                // Handle network errors
+                if (!response.ok && !response.headers.get('content-type')?.includes('application/json')) {
+                    throw new Error(`Network error: ${response.status} ${response.statusText}`);
+                }
+                
+                // Handle unauthorized (401) responses
                 if (response.status === 401) {
-                    // Token expired or invalid
                     localStorage.removeItem('quantumcoin_token');
                     localStorage.removeItem('quantumcoin_user');
-                    window.location.href = '/';
+                    localStorage.setItem('quantumcoin_loggedIn', 'false');
+                    showNotification('Session expired. Please login again.', 'error');
+                    authModal.style.display = 'block';
+                    switchTab('login');
                     return null;
                 }
-
-                const data = await response.json();
-
+                
+                const result = await response.json();
+                
                 if (!response.ok) {
-                    throw new Error(data.error || 'Request failed');
+                    throw new Error(result.error || result.message || `Request failed with status ${response.status}`);
                 }
-
-                return data;
+                
+                return result;
             } catch (error) {
                 console.error('API request failed:', error);
-                throw error;
+                
+                // Check if we're offline or if it's a CORS error
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    showNotification('Cannot connect to server. Please check your internet connection.', 'error');
+                    // Enable offline mode
+                    window.isOfflineMode = true;
+                } else {
+                    throw error;
+                }
+                
+                return null;
             }
+        }
+
+        // Offline mode functions
+        function simulateOfflineLogin(username, password) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const mockUser = {
+                        id: Date.now(),
+                        username: username,
+                        email: `${username}@example.com`,
+                        funding_balance: 0.00,
+                        demo_balance: 100000.00
+                    };
+                    
+                    const mockToken = `offline_token_${Date.now()}`;
+                    
+                    resolve({
+                        token: mockToken,
+                        user: mockUser
+                    });
+                }, 1000);
+            });
+        }
+
+        function simulateOfflineRegister(username, email, password) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const mockUser = {
+                        id: Date.now(),
+                        username: username,
+                        email: email,
+                        funding_balance: 0.00,
+                        demo_balance: 100000.00
+                    };
+                    
+                    const mockToken = `offline_token_${Date.now()}`;
+                    
+                    resolve({
+                        token: mockToken,
+                        user: mockUser
+                    });
+                }, 1000);
+            });
         }
 
         // ========== GOOGLE AUTHENTICATION ==========
@@ -2056,7 +2132,7 @@
                 }
                 
                 // Send Google token to backend
-                const result = await apiRequest('/auth/google', 'POST', {
+                const result = await apiRequest('api/auth/google', 'POST', {
                     credential: response.credential
                 });
                 
@@ -2301,7 +2377,7 @@
         function logout() {
             // Try to call logout API (but don't fail if offline)
             if (!window.isOfflineMode) {
-                apiRequest('/auth/logout', 'POST').catch(() => {
+                apiRequest('/api/auth/logout', 'POST').catch(() => {
                     // Silently fail if API call fails
                 });
             }
@@ -2426,22 +2502,26 @@
                 spinner.style.display = 'block';
                 loginSubmitBtn.disabled = true;
                 
-                // ✅ FIXED: Using correct API URL structure
-                const response = await fetch(`${API_URL}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Login failed');
+                let result;
+                
+                // Check if we're in offline mode
+                if (window.isOfflineMode) {
+                    result = await simulateOfflineLogin(username, password);
+                } else {
+                    // Call login API
+                    result = await apiRequest('/api/auth/login', 'POST', {
+                        username: username,
+                        password: password
+                    });
                 }
-
+                
+                if (!result) {
+                    throw new Error('Login failed. Please try again.');
+                }
+                
                 // Store user data and token
-                setCurrentUser(data);
-
+                setCurrentUser(result);
+                
                 // Hide modal and show success message
                 authModal.style.display = 'none';
                 showNotification('Login successful! Welcome back.', 'success');
@@ -2510,22 +2590,27 @@
                 spinner.style.display = 'block';
                 signupSubmitBtn.disabled = true;
                 
-                // ✅ FIXED: Using correct API URL structure
-                const response = await fetch(`${API_URL}/api/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Registration failed');
+                let result;
+                
+                // Check if we're in offline mode
+                if (window.isOfflineMode) {
+                    result = await simulateOfflineRegister(username, email, password);
+                } else {
+                    // Call register API
+                    result = await apiRequest('/api/auth/register', 'POST', {
+                        username: username,
+                        email: email,
+                        password: password
+                    });
                 }
-
+                
+                if (!result) {
+                    throw new Error('Registration failed. Please try again.');
+                }
+                
                 // Store user data and token
-                setCurrentUser(data);
-
+                setCurrentUser(result);
+                
                 // Hide modal and show success message
                 authModal.style.display = 'none';
                 showNotification('Account created successfully! Welcome to QuantumCoin.', 'success');
@@ -2751,17 +2836,20 @@
 
         // ========== INITIALIZATION ==========
         window.addEventListener('DOMContentLoaded', () => {
-            // Check if user is logged in
-            token = localStorage.getItem('quantumcoin_token');
-            const userStr = localStorage.getItem('quantumcoin_user');
+            // Check if API is available
+            checkAPIHealth();
             
-            if (token && userStr) {
-                currentUser = JSON.parse(userStr);
-                updateAuthUI();
-            }
-
             // Initialize Google Auth
             initializeGoogleAuth();
+            
+            // Check login state
+            updateAuthUI();
+            
+            // Check if we should auto-redirect to dashboard
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('redirect') === 'dashboard' && isLoggedIn()) {
+                window.location.href = 'dashboard.html';
+            }
             
             // Initialize coin cards
             initializeCoinCards();
@@ -2801,52 +2889,34 @@
             });
         });
 
+        // API health check
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    console.warn('API health check failed');
+                    window.isOfflineMode = true;
+                    showNotification('Connected to demo mode. Some features may be limited.', 'info');
+                } else {
+                    window.isOfflineMode = false;
+                }
+            } catch (error) {
+                console.warn('API unavailable, running in offline mode');
+                window.isOfflineMode = true;
+                showNotification('Running in offline demo mode. Sign up to access full features.', 'info');
+            }
+        }
+
         // Admin access (hidden feature)
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.shiftKey && e.key === 'A') {
                 showNotification('Admin access not implemented in demo version', 'info');
             }
         });
-
-        // Old functions for compatibility
-        function openAuthModal(tab) {
-            document.getElementById('authModal').style.display = 'flex';
-            switchTab(tab);
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').style.display = 'none';
-            // Clear error messages
-            document.getElementById('loginError').style.display = 'none';
-            document.getElementById('registerError').style.display = 'none';
-            document.getElementById('registerSuccess').style.display = 'none';
-        }
-
-        function scrollToSection(sectionId) {
-            event.preventDefault();
-            
-            // Update active nav link
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
-            // Hide all sections
-            document.querySelectorAll('.page-section').forEach(section => {
-                section.classList.remove('active');
-            });
-
-            // Show selected section
-            if (sectionId === 'home') {
-                document.getElementById('home').classList.add('active');
-            } else if (sectionId === 'features') {
-                document.getElementById('features').classList.add('active');
-            }
-        }
-
-        function goToDashboard() {
-            window.location.href = 'dashboard.html';
-        }
     </script>
 </body>
 </html>

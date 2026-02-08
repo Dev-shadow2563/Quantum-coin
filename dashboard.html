@@ -2179,114 +2179,114 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        function renderChart(chartData) {
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            
-            if (priceChart) {
-                priceChart.destroy();
-            }
-            
-            if (chartType === 'candlestick') {
-                // Convert data for candlestick chart
-                const candlestickData = chartData.map(point => ({
-                    t: new Date(point.time),
-                    o: point.open,
-                    h: point.high,
-                    l: point.low,
-                    c: point.close
-                }));
-                
-                priceChart = new Chart(ctx, {
-                    type: 'candlestick',
-                    data: {
-                        datasets: [{
-                            label: `${selectedCoin} Price`,
-                            data: candlestickData,
-                            color: {
-                                up: '#00ff88',
-                                down: '#ff006e',
-                                unchanged: '#999999'
-                            },
-                            borderColor: 'rgba(0, 240, 255, 0.5)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: {
-                                    unit: timeframe === '1h' ? 'minute' : 
-                                          timeframe === '1d' ? 'hour' :
-                                          timeframe === '1w' ? 'day' :
-                                          timeframe === '1m' ? 'day' : 'month'
-                                },
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
-                            },
-                            y: {
-                                position: 'right',
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { 
-                                    color: 'rgba(226, 250, 252, 0.7)',
-                                    callback: value => '$' + value.toLocaleString()
-                                }
-                            }
-                        }
-                    }
-                });
-            } else {
-                // Line chart
-                const lineData = chartData.map(point => ({
-                    x: new Date(point.time),
-                    y: point.close
-                }));
-                
-                const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
-                
-                priceChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        datasets: [{
-                            label: `${selectedCoin} Price`,
-                            data: lineData,
-                            borderColor: coinColor,
-                            backgroundColor: `${coinColor}20`,
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            x: {
-                                type: 'time',
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { color: 'rgba(226, 250, 252, 0.7)' }
-                            },
-                            y: {
-                                grid: { color: 'rgba(0, 240, 255, 0.1)' },
-                                ticks: { 
-                                    color: 'rgba(226, 250, 252, 0.7)',
-                                    callback: value => '$' + value.toLocaleString()
-                                }
-                            }
-                        }
-                    }
-                });
-            }
+      function renderChart(chartData) {
+  const ctx = document.getElementById('priceChart').getContext('2d');
+
+  if (priceChart) priceChart.destroy();
+
+  const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
+
+  const timeUnit =
+    timeframe === '1h' ? 'minute' :
+    timeframe === '1d' ? 'hour' :
+    timeframe === '1w' ? 'day' :
+    timeframe === '1m' ? 'day' : 'month';
+
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: { unit: timeUnit },
+        grid: { color: 'rgba(0, 240, 255, 0.1)' },
+        ticks: { color: 'rgba(226, 250, 252, 0.7)' }
+      },
+      y: {
+        position: 'right',
+        grid: { color: 'rgba(0, 240, 255, 0.1)' },
+        ticks: {
+          color: 'rgba(226, 250, 252, 0.7)',
+          callback: value => '$' + value.toLocaleString()
         }
+      }
+    }
+  };
+
+  try {
+    // =============================
+    // 🕯️ Candlestick
+    // =============================
+    if (chartType === 'candlestick' && window.Chart?.controllers?.candlestick) {
+
+      const candlestickData = chartData.map(p => ({
+        t: new Date(p.time),
+        o: p.open,
+        h: p.high,
+        l: p.low,
+        c: p.close
+      }));
+
+      priceChart = new Chart(ctx, {
+        type: 'candlestick',
+        data: {
+          datasets: [{
+            label: `${selectedCoin} Price`,
+            data: candlestickData,
+            color: {
+              up: '#00ff88',
+              down: '#ff006e',
+              unchanged: '#999'
+            },
+            borderColor: 'rgba(0, 240, 255, 0.5)',
+            borderWidth: 1
+          }]
+        },
+        options: commonOptions
+      });
+
+      return;
+    }
+
+  } catch (err) {
+    console.warn('Candlestick failed, falling back to line');
+  }
+
+  // =============================
+  // 📈 Line (fallback/default)
+  // =============================
+  chartType = 'line';
+
+  document.querySelectorAll('.chart-type-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.chart === 'line');
+  });
+
+  const lineData = chartData.map(p => ({
+    x: new Date(p.time),
+    y: p.close
+  }));
+
+  priceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: `${selectedCoin} Price`,
+        data: lineData,
+        borderColor: coinColor,
+        backgroundColor: `${coinColor}20`,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0
+      }]
+    },
+    options: commonOptions
+  });
+}
+
 
         // ========== TRADING FUNCTIONS ==========
         function updateBuyCalculation() {

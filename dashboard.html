@@ -1490,14 +1490,18 @@
                         <div class="form-group">
                             <label for="sellCoin">Coin</label>
                             <select id="sellCoin" class="form-control">
-                                <option value="BTC">Bitcoin (BTC)</option>
-                                <option value="ETH">Ethereum (ETH)</option>
-                                <option value="DOGE">Dogecoin (DOGE)</option>
-                                <option value="SHIB">Shiba Inu (SHIB)</option>
-                                <option value="ADA">Cardano (ADA)</option>
-                                <option value="SOL">Solana (SOL)</option>
-                                <option value="XRP">Ripple (XRP)</option>
-                                <option value="BNB">Binance Coin (BNB)</option>
+ <option value="BTC">Bitcoin (BTC)</option>
+    <option value="ETH">Ethereum (ETH)</option>
+    <option value="BNB">Binance Coin (BNB)</option>
+    <option value="SOL">Solana (SOL)</option>
+    <option value="XRP">Ripple (XRP)</option>
+    <option value="ADA">Cardano (ADA)</option>
+    <option value="DOGE">Dogecoin (DOGE)</option>
+    <option value="SHIB">Shiba Inu (SHIB)</option>
+    <option value="MATIC">Polygon (MATIC)</option>
+    <option value="AVAX">Avalanche (AVAX)</option>
+    <option value="TON">Toncoin (TON)</option>
+    <option value="PEPE">Pepe (PEPE)</option>
                             </select>
                         </div>
                         
@@ -1726,6 +1730,13 @@
             });
         }
 
+         socket.on('trade_executed', (data) => {
+    showNotification('success', 'Trade Executed', 
+      `${data.type.toUpperCase()} ${data.amount} ${data.symbol} at $${data.price.toFixed(2)}`);
+    loadPortfolio();
+    loadTransactions();
+  });
+        
         function updateConnectionStatus(connected) {
             const statusElement = document.getElementById('connectionStatus');
             if (!statusElement) return;

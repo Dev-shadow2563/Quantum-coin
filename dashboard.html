@@ -1739,41 +1739,103 @@
 
         // ========== API CALLS ==========
         // ✅ FIXED: Updated apiRequest function with Bearer Token
-        async function apiRequest(endpoint, options = {}) {
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,  // ✅ Added Bearer prefix
-                ...options.headers
-            };
-            
-            try {
-                const response = await fetch(`${API_URL}${endpoint}`, {
-                    ...options,
-                    headers
-                });
-                
-                if (response.status === 401) {
-                    localStorage.removeItem('quantumcoin_token');
-                    localStorage.removeItem('quantumcoin_user');
-                    window.location.href = '/';
-                    return null;
-                }
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Request failed');
-                }
-                
-                return data;
-            } catch (error) {
-                console.error('API request failed:', error);
-                showNotification('warning', 'Request Failed', error.message);
-                return null;
-            }
-        }
+// ✅ FIXED: Updated apiRequest function with proper error handling
+async function apiRequest(endpoint, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    ...options.headers
+  };
+  
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers
+    });
+    
+    // Handle unauthorized (401)
+    if (response.status === 401) {
+      localStorage.removeItem('quantumcoin_token');
+      localStorage.removeItem('quantumcoin_user');
+      window.location.href = '/';
+      throw new Error('Session expired. Please login again.');
+    }
+    
+    // Handle other error statuses
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    // Parse response
+    const data = await response.json();
+    return data;
+    
+  } catch (error) {
+    console.error(`API request failed (${endpoint}):`, error);
+    
+    // Only show notification for non-auth errors
+    if (!error.message.includes('Session expired')) {
+      showNotification('warning', 'Request Failed', error.message);
+    }
+    
+    // Re-throw for calling code to handle
+    throw error;
+  }
+}
 
         // ========== DATA LOADING ==========
+        // Add this to your initialization section after DOMContentLoaded
+async function loadInitialData() {
+  try {
+    // Load user data
+    const userData = await apiRequest('/api/user/data');
+    if (userData) {
+      currentUser = { ...currentUser, ...userData };
+      localStorage.setItem('quantumcoin_user', JSON.stringify(currentUser));
+      updateUserDisplay();
+    }
+    
+    // Load all data in parallel
+    await Promise.all([
+      loadMarketData(),
+      loadPortfolio(),
+      loadTransactions(),
+      loadTradeHistory()
+    ]);
+    
+    // Initialize chart
+    setTimeout(() => loadChartData(), 1000);
+    
+  } catch (error) {
+    console.error('Failed to load initial data:', error);
+    showNotification('warning', 'Data Loading', 'Some data may not be available. Please refresh the page.');
+  }
+}
+
+// Update the DOMContentLoaded event listener:
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if user is logged in
+  token = localStorage.getItem('quantumcoin_token');
+  currentUser = JSON.parse(localStorage.getItem('quantumcoin_user') || 'null');
+  
+  if (!token || !currentUser) {
+    window.location.href = '/';
+    return;
+  }
+  
+  // Initialize WebSocket connection
+  initializeWebSocket();
+  
+  // Load all initial data
+  loadInitialData();
+  
+  // Setup event listeners
+  initializeEventListeners();
+  
+  // Other initialization code...
+});
+        
         async function loadUserData() {
             // User data is already in localStorage from login
             updateUserDisplay();

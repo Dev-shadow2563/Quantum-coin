@@ -2665,17 +2665,53 @@
             }
         }
 
-        function formatAmount(amount, symbol, forInput = false) {
-            if (symbol === 'BTC' || symbol === 'ETH' || symbol === 'BNB') {
-                return forInput ? amount.toFixed(8) : amount.toFixed(6).replace(/\.?0+$/, '');
-            } else if (symbol === 'DOGE' || symbol === 'XRP' || symbol === 'ADA') {
-                return forInput ? amount.toFixed(2) : amount.toFixed(2).replace(/\.?0+$/, '');
-            } else if (symbol === 'SHIB') {
-                return forInput ? amount.toFixed(0) : amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
-            } else {
-                return forInput ? amount.toFixed(4) : amount.toFixed(4).replace(/\.?0+$/, '');
-            }
-        }
+function formatAmount(amount, symbol, forInput = false) {
+    const precisionMap = {
+        // High precision (8 decimals)
+        BTC: 8,
+        ETH: 8,
+        BNB: 8,
+        LTC: 8,
+        SOL: 8,
+        AVAX: 8,
+        DOT: 8,
+        MATIC: 8,
+
+        // Medium precision (4 decimals)
+        LINK: 4,
+        TRX: 4,
+        UNI: 4,
+        ATOM: 4,
+        NEAR: 4,
+        ALGO: 4,
+
+        // Low precision (2 decimals)
+        DOGE: 2,
+        XRP: 2,
+        ADA: 2,
+        TON: 2,
+        FIL: 2,
+        ETC: 2,
+
+        // Whole numbers only
+        SHIB: 0,
+        PEPE: 0,
+        FLOKI: 0
+    };
+
+    const decimals = precisionMap[symbol] ?? 4;
+
+    if (forInput) {
+        return amount.toFixed(decimals);
+    }
+
+    if (decimals === 0) {
+        return amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+
+    return amount.toFixed(decimals).replace(/\.?0+$/, '');
+}
+
 
         function formatVolume(volume) {
             if (volume >= 1000000000) {

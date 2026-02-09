@@ -794,69 +794,80 @@
             }
         }
 
-        async function processDeposit() {
-            const amount = parseFloat(depositAmountInput.value) || 0;
-            
-            // Validate amount
-            if (amount < 10) {
-                showError('Minimum deposit amount is $10.00');
-                depositAmountInput.focus();
-                return;
-            }
-            
-            if (amount > 100000) {
-                showError('Maximum deposit amount is $100,000.00');
-                depositAmountInput.focus();
-                return;
-            }
-            
-            // Calculate bonus
-            const bonus = amount >= 1000 ? amount * 0.05 : 0;
-            const totalToReceive = amount + bonus;
-            
-            // Disable submit button and show loading
-            submitDepositBtn.disabled = true;
-            submitDepositBtn.innerHTML = '<div class="loading-spinner"></div>';
-            
-            try {
-                const result = await apiRequest('/api/transactions/deposit', {
-                    method: 'POST',
-                    body: JSON.stringify({ amount })
-                });
-                
-                if (result) {
-                    transactionId = result.transactionId;
-                    
-                    // Store deposit info for notifications
-                    localStorage.setItem('last_deposit_id', result.transactionId);
-                    localStorage.setItem('last_deposit_amount', amount);
-                    localStorage.setItem('last_deposit_time', Date.now());
-                    
-                    // Show confirmation modal
-                    modalMessage.innerHTML = `
-                        <div style="text-align: left; margin-bottom: 20px;">
-                            <strong>Deposit Request Summary:</strong><br>
-                            • Amount: $${amount.toFixed(2)}<br>
-                            • Bonus: $${bonus.toFixed(2)}<br>
-                            • Total to Receive: $${totalToReceive.toFixed(2)}<br>
-                            • Transaction ID: ${result.transactionId}<br>
-                            • Status: <span style="color: var(--warning);">Pending Admin Approval</span><br>
-                            • Time: ${new Date().toLocaleTimeString()}
-                        </div>
-                        <p>${result.message}<br><br>
-                        Our admin team will review your request within 24 hours.<br>
-                        You'll receive a notification once it's approved.</p>
-                    `;
-                    confirmationModal.style.display = 'flex';
-                }
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                // Re-enable button
-                submitDepositBtn.disabled = false;
-                submitDepositBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Deposit Request';
-            }
+async function processDeposit() {
+    const amount = parseFloat(depositAmountInput.value) || 0;
+
+    // ✅ Validate amount
+    if (amount < 10) {
+        showError('Minimum deposit amount is $10.00');
+        depositAmountInput.focus();
+        return;
+    }
+
+    if (amount > 100000) {
+        showError('Maximum deposit amount is $100,000.00');
+        depositAmountInput.focus();
+        return;
+    }
+
+    // ✅ Calculate bonus
+    const bonus = amount >= 1000 ? amount * 0.05 : 0;
+    const totalToReceive = amount + bonus;
+
+    // ✅ Disable button + loading spinner
+    submitDepositBtn.disabled = true;
+    submitDepositBtn.innerHTML = '<div class="loading-spinner"></div>';
+
+    try {
+        const result = await apiRequest('/api/transactions/deposit', {
+            method: 'POST',
+            body: JSON.stringify({
+                amount,
+                network: 'manual',
+                wallet_address: 'n/a',
+                notes: `Deposit request from user ${currentUser?.username}`
+            })
+        });
+
+        if (result) {
+            transactionId = result.transactionId;
+
+            // ✅ Save for notifications
+            localStorage.setItem('last_deposit_id', result.transactionId);
+            localStorage.setItem('last_deposit_amount', amount);
+            localStorage.setItem('last_deposit_time', Date.now());
+
+            // ✅ Show confirmation modal
+            modalMessage.innerHTML = `
+                <div style="text-align:left;margin-bottom:20px;">
+                    <strong>Deposit Request Summary:</strong><br>
+                    • Amount: $${amount.toFixed(2)}<br>
+                    • Bonus: $${bonus.toFixed(2)}<br>
+                    • Total to Receive: $${totalToReceive.toFixed(2)}<br>
+                    • Transaction ID: ${result.transactionId}<br>
+                    • Status: <span style="color: var(--warning);">Pending Admin Approval</span><br>
+                    • Time: ${new Date().toLocaleTimeString()}
+                </div>
+                <p>
+                    ${result.message}<br><br>
+                    Our admin team will review your request within 24 hours.<br>
+                    You'll receive a notification once it's approved.
+                </p>
+            `;
+
+            confirmationModal.style.display = 'flex';
         }
+
+    } catch (error) {
+        showError('Deposit request failed: ' + error.message);
+
+    } finally {
+        // ✅ Re-enable button
+        submitDepositBtn.disabled = false;
+        submitDepositBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Deposit Request';
+    }
+}
+
 
         function showError(message) {
             alert('Error: ' + message);

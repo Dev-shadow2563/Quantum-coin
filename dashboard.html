@@ -1797,6 +1797,73 @@ async function apiRequest(endpoint, options = {}) {
   }
 }
 
+  const toLine = data =>
+    data.map(p => ({ x: new Date(p.time), y: p.close }));
+
+  const toCandle = data =>
+    data.map(p => ({
+      t: new Date(p.time),
+      o: p.open,
+      h: p.high,
+      l: p.low,
+      c: p.close
+    }));
+
+  const candlestickAvailable = !!window.Chart?.controllers?.candlestick;
+
+  // =============================
+  // Chart type selection
+  // =============================
+  let type = chartType;
+
+  if (type === 'candlestick' && candlestickAvailable) {
+    priceChart = new Chart(ctx, {
+      type: 'candlestick',
+      data: {
+        datasets: [{
+          label: `${selectedCoin} Price`,
+          data: toCandle(chartData),
+          color: {
+            up: '#00ff88',
+            down: '#ff3b6b',
+            unchanged: '#999'
+          },
+          borderColor: coinColor,
+          borderWidth: 1
+        }]
+      },
+      options: commonOptions
+    });
+
+  } else {
+    // fallback automatically
+    type = 'line';
+    chartType = 'line';
+
+    document.querySelectorAll('.chart-type-btn').forEach(btn =>
+      btn.classList.toggle('active', btn.dataset.chart === 'line')
+    );
+
+    priceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: `${selectedCoin} Price`,
+          data: toLine(chartData),
+          borderColor: coinColor,
+          backgroundColor: `${coinColor}20`,
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 0
+        }]
+      },
+      options: commonOptions
+    });
+  }
+}
+
+
         // ========== DATA LOADING ==========
         // Add this to your initialization section after DOMContentLoaded
 async function loadInitialData() {
@@ -1819,6 +1886,10 @@ async function loadInitialData() {
     
     // Initialize chart
     setTimeout(() => loadChartData(), 1000);
+function startChartLiveUpdate() {
+  clearInterval(chartInterval);
+  chartInterval = setInterval(loadChartData, 3000); // every 3 seconds
+}
     
   } catch (error) {
     console.error('Failed to load initial data:', error);
@@ -1860,8 +1931,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data) {
                 cryptoData = data;
                 initializeTradingPairs();
+                 updateTradingPairs();
                 updateFormPrices(selectedCoin);
                 loadChartData();
+                setInterval(loadMarketData, 2000);
             }
         }
 
@@ -2180,140 +2253,228 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderChart(data);
             }
         }
+
 function renderChart(chartData = []) {
   const canvas = document.getElementById('priceChart');
   if (!canvas || !chartData.length) return;
-
+  
   const ctx = canvas.getContext('2d');
-
-  // Destroy old chart safely
+  const isCandlestickSupported = window.Chart?.controllers?.candlestick;
+  
+  // Safely destroy existing chart
   if (priceChart) {
     priceChart.destroy();
     priceChart = null;
   }
-
+  
+  // Determine chart type
+  const chartType = (chartType === 'candlestick' && isCandlestickSupported) 
+    ? 'candlestick' 
+    : 'line';
+  
+  // Get coin styling
   const coinColor = cryptoData[selectedCoin]?.color || '#00f0ff';
-
+  const coinLabel = selectedCoin;
+  
+  // Time unit mapping
   const TIME_UNITS = {
     '1h': 'minute',
     '1d': 'hour',
     '1w': 'day',
-    '1m': 'day'
+    '1m': 'day',
+    '1y': 'month',
+    'max': 'month'
   };
-
+  
   const timeUnit = TIME_UNITS[timeframe] || 'month';
-
-  // =============================
-  // Shared options (faster + prettier)
-  // =============================
-  const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: { duration: 300 },
-    parsing: false,      // 🚀 performance boost
-    normalized: true,    // 🚀 smoother scale
-    interaction: {
-      mode: 'index',
-      intersect: false
-    },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#0b0f14',
-        borderColor: coinColor,
-        borderWidth: 1,
-        callbacks: {
-          label: ctx => `$${ctx.parsed.y?.toLocaleString() ?? ctx.raw.c}`
-        }
-      }
-    },
-    scales: {
-      x: {
-        type: 'time',
-        time: { unit: timeUnit },
-        grid: { color: 'rgba(0,240,255,0.08)' },
-        ticks: { color: 'rgba(226,250,252,0.7)' }
-      },
-      y: {
-        position: 'right',
-        grid: { color: 'rgba(0,240,255,0.08)' },
-        ticks: {
-          color: 'rgba(226,250,252,0.7)',
-          callback: v => '$' + v.toLocaleString()
-        }
-      }
-    }
-  };
-
-  // =============================
-  // Helpers
-  // =============================
-  const toLine = data =>
-    data.map(p => ({ x: new Date(p.time), y: p.close }));
-
-  const toCandle = data =>
-    data.map(p => ({
-      t: new Date(p.time),
+  
+  // Data transformation
+  const transformData = {
+    line: (data) => data.map(p => ({
+      x: new Date(p.time),
+      y: p.close
+    })),
+    candlestick: (data) => data.map(p => ({
+      x: new Date(p.time),
       o: p.open,
       h: p.high,
       l: p.low,
       c: p.close
-    }));
-
-  const candlestickAvailable = !!window.Chart?.controllers?.candlestick;
-
-  // =============================
-  // Chart type selection
-  // =============================
-  let type = chartType;
-
-  if (type === 'candlestick' && candlestickAvailable) {
-    priceChart = new Chart(ctx, {
-      type: 'candlestick',
-      data: {
-        datasets: [{
-          label: `${selectedCoin} Price`,
-          data: toCandle(chartData),
+    }))
+  };
+  
+  // Chart configuration
+  const config = {
+    type: chartType,
+    data: {
+      datasets: [{
+        label: coinLabel,
+        data: transformData[chartType](chartData),
+        borderColor: coinColor,
+        backgroundColor: chartType === 'line' 
+          ? `${coinColor}20` 
+          : 'transparent',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 0,
+        // Candlestick specific styling
+        ...(chartType === 'candlestick' && {
           color: {
-            up: '#00ff88',
-            down: '#ff3b6b',
-            unchanged: '#999'
+            up: '#10b981',
+            down: '#ef4444',
+            unchanged: coinColor
+          }
+        })
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { 
+        duration: 300,
+        easing: 'easeOutQuart'
+      },
+      parsing: false,
+      normalized: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+        axis: 'x'
+      },
+      plugins: {
+        legend: { 
+          display: false 
+        },
+        tooltip: {
+          backgroundColor: '#0b0f14',
+          borderColor: coinColor,
+          borderWidth: 1,
+          padding: 12,
+          titleColor: 'rgba(226,250,252,0.9)',
+          titleFont: { size: 14 },
+          bodyColor: '#ffffff',
+          bodyFont: { size: 13 },
+          displayColors: false,
+          callbacks: {
+            label: (context) => {
+              if (chartType === 'candlestick') {
+                const point = context.raw;
+                return [
+                  `Open: $${point.o?.toLocaleString() ?? 'N/A'}`,
+                  `High: $${point.h?.toLocaleString() ?? 'N/A'}`,
+                  `Low: $${point.l?.toLocaleString() ?? 'N/A'}`,
+                  `Close: $${point.c?.toLocaleString() ?? 'N/A'}`
+                ];
+              }
+              return `$${context.parsed.y?.toLocaleString() ?? context.raw.y}`;
+            },
+            title: (tooltipItems) => {
+              const date = new Date(tooltipItems[0].parsed.x);
+              return date.toLocaleString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'time',
+          time: {
+            unit: timeUnit,
+            tooltipFormat: 'MMM d, yyyy HH:mm',
+            displayFormats: {
+              minute: 'HH:mm',
+              hour: 'HH:mm',
+              day: 'MMM d',
+              month: 'MMM yyyy'
+            }
           },
-          borderColor: coinColor,
-          borderWidth: 1
-        }]
+          grid: {
+            color: 'rgba(0, 240, 255, 0.08)',
+            drawBorder: false
+          },
+          ticks: {
+            color: 'rgba(226, 250, 252, 0.7)',
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 8
+          }
+        },
+        y: {
+          position: 'right',
+          grid: {
+            color: 'rgba(0, 240, 255, 0.08)',
+            drawBorder: false
+          },
+          ticks: {
+            color: 'rgba(226, 250, 252, 0.7)',
+            callback: (value) => `$${value.toLocaleString()}`,
+            padding: 8
+          },
+          beginAtZero: false
+        }
       },
-      options: commonOptions
+      elements: {
+        line: {
+          fill: true
+        },
+        point: {
+          hoverRadius: 6,
+          hoverBackgroundColor: coinColor
+        }
+      }
+    }
+  };
+  
+  // Create chart instance
+  try {
+    priceChart = new Chart(ctx, config);
+    
+    // Add resize listener for better responsiveness
+    const resizeObserver = new ResizeObserver(() => {
+      if (priceChart) {
+        priceChart.resize();
+      }
     });
-
-  } else {
-    // fallback automatically
-    type = 'line';
-    chartType = 'line';
-
-    document.querySelectorAll('.chart-type-btn').forEach(btn =>
-      btn.classList.toggle('active', btn.dataset.chart === 'line')
-    );
-
-    priceChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        datasets: [{
-          label: `${selectedCoin} Price`,
-          data: toLine(chartData),
-          borderColor: coinColor,
-          backgroundColor: `${coinColor}20`,
-          borderWidth: 2,
-          fill: true,
-          tension: 0.35,
-          pointRadius: 0
-        }]
-      },
-      options: commonOptions
-    });
+    
+    resizeObserver.observe(canvas);
+    
+    // Cleanup on next render
+    if (priceChart._resizeObserver) {
+      priceChart._resizeObserver.disconnect();
+    }
+    priceChart._resizeObserver = resizeObserver;
+    
+  } catch (error) {
+    console.error('Failed to render chart:', error);
+    
+    // Fallback to line chart if candlestick fails
+    if (chartType === 'candlestick') {
+      renderChart(chartData); // Recursive call with line chart
+    }
   }
 }
 
+// Optional: Utility function for chart cleanup
+function cleanupChart() {
+  if (priceChart) {
+    if (priceChart._resizeObserver) {
+      priceChart._resizeObserver.disconnect();
+    }
+    priceChart.destroy();
+    priceChart = null;
+  }
+}
+
+
+  // =============================
+  // Helpers
+  // =============================
 
 
         // ========== TRADING FUNCTIONS ==========
